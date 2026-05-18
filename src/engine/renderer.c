@@ -2,18 +2,6 @@
 
 #include "renderer.h"
 
-typedef struct Vertex
-{
-	float x;
-	float y;
-} Vertex;
-
-Vertex verts[] = {
-	{0.0, 0.5},
-	{0.5, -0.5},
-	{-0.5, -0.5},
-};
-
 Renderer renderer_new(SDL_Window *wnd)
 {
 	SDL_GPUDevice *device = SDL_CreateGPUDevice(
@@ -37,42 +25,19 @@ Renderer renderer_new(SDL_Window *wnd)
 		.device = device};
 }
 
-void renderer_release(Renderer *renderer)
+void renderer_release(Renderer *renderer, SDL_Window *wnd)
 {
+	SDL_ReleaseGPUShader(renderer->device, renderer->vertexShader);
+	SDL_ReleaseGPUShader(renderer->device, renderer->fragmentShader);
+	SDL_ReleaseGPUBuffer(renderer->device, renderer->vertexBuffer);
 	SDL_DestroyGPUDevice(renderer->device);
 	// TODO: muut?
 }
 
-void renderer_shader_new(Renderer *renderer, const char *path, const ShaderType type)
+void renderer_shader_new(Renderer *renderer, const char *path)
 {
 	size_t shaderSize;
 	void *shaderSrc = SDL_LoadFile(path, &shaderSize);
-	printf("shaderSrc:\n%s\n\n", shaderSrc);
-
-	// SDL_GPUShaderCreateInfo ctx = {
-	// 	.code = (Uint8 *)shaderSrc,
-	// 	.code_size = shaderSize,
-	// 	.entrypoint = type == 0 ? "vertexMain" : "fragmentMain",
-	// 	.format = SDL_GPU_SHADERFORMAT_MSL,
-	// 	.stage = (SDL_GPUShaderStage)type,
-	// 	.num_samplers = 0,
-	// 	.num_storage_textures = 0,
-	// 	.num_storage_buffers = 0,
-	// 	.num_uniform_buffers = 0,
-	// 	.props = 0};
-
-	// SDL_GPUShader *shader = SDL_CreateGPUShader(
-	// 	renderer->device,
-	// 	&ctx);
-
-	// if (type == VERTEX_SHADER)
-	// {
-	// 	renderer->vertexShader = shader;
-	// }
-	// else if (type == FRAGMENT_SHADER)
-	// {
-	// 	renderer->fragmentShader = shader;
-	// }
 
 	SDL_GPUShaderCreateInfo vertCtx = {0};
 	vertCtx.code = (Uint8 *)shaderSrc,
@@ -80,10 +45,7 @@ void renderer_shader_new(Renderer *renderer, const char *path, const ShaderType 
 	vertCtx.entrypoint = "vertexMain",
 	vertCtx.format = SDL_GPU_SHADERFORMAT_MSL,
 	vertCtx.stage = SDL_GPU_SHADERSTAGE_VERTEX,
-
-	renderer->vertexShader = SDL_CreateGPUShader(
-		renderer->device,
-		&vertCtx);
+	renderer->vertexShader = SDL_CreateGPUShader(renderer->device, &vertCtx);
 
 	SDL_GPUShaderCreateInfo fragCtx = {0};
 	fragCtx.code = (Uint8 *)shaderSrc,
@@ -91,80 +53,62 @@ void renderer_shader_new(Renderer *renderer, const char *path, const ShaderType 
 	fragCtx.entrypoint = "fragmentMain",
 	fragCtx.format = SDL_GPU_SHADERFORMAT_MSL,
 	fragCtx.stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
-
-	renderer->fragmentShader = SDL_CreateGPUShader(
-		renderer->device,
-		&fragCtx);
+	renderer->fragmentShader = SDL_CreateGPUShader(renderer->device, &fragCtx);
 
 	SDL_free(shaderSrc);
 }
 
-void renderer_buffer_new(Renderer *renderer)
+void renderer_buffer_new(Renderer *renderer, void *vertices, unsigned vertex_bytes, size_t vertex_count)
 {
-}
+	size_t vertexBytes = vertex_bytes * vertex_count;
 
-void renderer_create_buffer(Renderer *renderer)
-{
-	const SDL_GPUBufferCreateInfo ctx = {
-		.usage = SDL_GPU_BUFFERUSAGE_VERTEX,
-		.size = sizeof(verts),
-		.props = 0};
-
-	renderer->vertexBuffer = SDL_CreateGPUBuffer(renderer->device, &ctx);
+	SDL_GPUBufferCreateInfo bci = {0};
+	bci.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+	bci.size = vertexBytes;
+	renderer->vertexBuffer = SDL_CreateGPUBuffer(renderer->device, &bci);
 
 	// TODO: release gpu buff
-}
 
-void renderer_upload_buffer(Renderer *renderer)
-{
-
-	SDL_GPUTransferBufferCreateInfo ctx = {
-		.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-		.size = sizeof(verts),
-		.props = 0};
-	SDL_GPUTransferBuffer *tb = SDL_CreateGPUTransferBuffer(renderer->device, &ctx);
+	SDL_GPUTransferBufferCreateInfo tbci = {0};
+	tbci.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+	tbci.size = vertexBytes;
+	SDL_GPUTransferBuffer *tb = SDL_CreateGPUTransferBuffer(renderer->device, &tbci);
 
 	float *data = SDL_MapGPUTransferBuffer(renderer->device, tb, false);
-	SDL_memcpy(data, verts, sizeof(verts));
-	// TODO: SDL_UnmapGPUTransferBuffer(renderer->device, tb);
+	SDL_memcpy(data, vertices, vertexBytes);
+	SDL_UnmapGPUTransferBuffer(renderer->device, tb);
+
+	SDL_GPUTransferBufferLocation source = {0};
+	source.transfer_buffer = tb;
+	source.offset = 0;
+
+	SDL_GPUBufferRegion dest = {0};
+	dest.buffer = renderer->vertexBuffer;
+	dest.size = vertexBytes;
+	dest.offset = 0;
 
 	renderer->commandBuffer = SDL_AcquireGPUCommandBuffer(renderer->device);
 	SDL_GPUCopyPass *copy_pass = SDL_BeginGPUCopyPass(renderer->commandBuffer);
 
-	SDL_GPUTransferBufferLocation source = {
-		.transfer_buffer = tb,
-		.offset = 0};
-
-	SDL_GPUBufferRegion dest = {
-		.buffer = renderer->vertexBuffer,
-		.offset = 0,
-		.size = sizeof(verts)};
-
 	SDL_UploadToGPUBuffer(copy_pass, &source, &dest, false);
 
 	SDL_EndGPUCopyPass(copy_pass);
-
 	SDL_SubmitGPUCommandBuffer(renderer->commandBuffer);
 }
 
-void renderer_pipeline_new(Renderer *renderer, SDL_Window *wnd, const PrimitiveType type)
+void renderer_pipeline_new(Renderer *renderer, SDL_Window *wnd, unsigned stride, const PrimitiveType type)
 {
 	SDL_GPUGraphicsPipelineCreateInfo pci = {
-		// TODO: .primitive_type = (SDL_GPUPrimitiveType)type,
-		.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
+		.primitive_type = (SDL_GPUPrimitiveType)type,
 		.vertex_shader = renderer->vertexShader,
 		.fragment_shader = renderer->fragmentShader,
 		.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL};
-
-	// TODO:
-	// SDL_ReleaseGPUShader(renderer->device, renderer->vertexShader);
-	// SDL_ReleaseGPUShader(renderer->device, renderer->fragmentShader);
 
 	SDL_GPUVertexBufferDescription vbDec[1] = {0};
 	vbDec[0].slot = 0;
 	vbDec[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
 	vbDec[0].instance_step_rate = 0;
-	vbDec[0].pitch = sizeof(Vertex);
+	vbDec[0].pitch = stride;
 
 	pci.vertex_input_state.num_vertex_buffers = 1;
 	pci.vertex_input_state.vertex_buffer_descriptions = vbDec;
@@ -197,13 +141,6 @@ void renderer_pipeline_new(Renderer *renderer, SDL_Window *wnd, const PrimitiveT
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create graphics pipeline: %s\n", SDL_GetError());
 		exit(1);
 	}
-
-	// TODO: temp
-	renderer_create_buffer(renderer);
-
-	// TODO: temp
-	// requires command buffer
-	renderer_upload_buffer(renderer);
 }
 
 void renderer_begin_frame(Renderer *renderer, SDL_Window *wnd)
@@ -224,8 +161,6 @@ void renderer_begin_frame(Renderer *renderer, SDL_Window *wnd)
 	cti.clear_color = (SDL_FColor){0.0f, 0.0f, 0.0f, 1.0f};
 	cti.load_op = SDL_GPU_LOADOP_CLEAR;
 	cti.store_op = SDL_GPU_STOREOP_STORE;
-
-	// SDL_SubmitGPUCommandBuffer(renderer->renderPass);
 
 	renderer->renderPass = SDL_BeginGPURenderPass(renderer->commandBuffer, &cti, 1, NULL);
 

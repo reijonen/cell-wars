@@ -1,6 +1,6 @@
+#include "renderer.h"
 #include "engine.h"
 #include "window.h"
-#include "renderer.h"
 #include "input.h"
 
 Engine engine_new()
@@ -28,14 +28,14 @@ void engine_run(Engine *engine, App *app)
 		app->update(app->state, events, event_count, 0.0);
 
 		renderer_begin_frame(&engine->renderer, engine->wnd);
-		// app->render(app->state);
+		app->render(app->state);
 		renderer_end_frame(&engine->renderer);
 	}
 }
 
 void engine_release(Engine *engine)
 {
-	renderer_release(&engine->renderer);
+	renderer_release(&engine->renderer, engine->wnd);
 	window_release(engine->wnd);
 	SDL_Quit();
 }

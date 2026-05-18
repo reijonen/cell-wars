@@ -1,13 +1,25 @@
 #include "engine/engine.h"
 #include "game/game.h"
 
+typedef struct Vertex
+{
+	float x;
+	float y;
+} Vertex;
+
+Vertex verts[] = {
+	{0.0, 0.5},
+	{0.5, -0.5},
+	{-0.5, -0.5},
+};
+
 int main()
 {
 	Engine engine = engine_new();
 
-	renderer_shader_new(&engine.renderer, "./shader.metal", VERTEX_SHADER);
-	// renderer_shader_new(&engine.renderer, "./frag.metal", FRAGMENT_SHADER);
-	renderer_pipeline_new(&engine.renderer, engine.wnd, TRIANGLE_PRIMITIVE);
+	renderer_shader_new(&engine.renderer, "./shader.metal");
+	renderer_buffer_new(&engine.renderer, verts, sizeof(Vertex), sizeof(verts) / sizeof(Vertex));
+	renderer_pipeline_new(&engine.renderer, engine.wnd, sizeof(Vertex), TRIANGLE_PRIMITIVE);
 
 	Game game = game_new();
 
