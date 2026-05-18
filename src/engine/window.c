@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 
-SDL_Window *window_create()
+SDL_Window *window_new()
 {
 	SDL_Window *wnd = SDL_CreateWindow(
 		"test",
@@ -15,4 +15,9 @@ SDL_Window *window_create()
 	}
 
 	return wnd;
+}
+
+void window_release(SDL_Window *wnd)
+{
+	SDL_DestroyWindow(wnd);
 }

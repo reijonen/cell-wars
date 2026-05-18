@@ -3,13 +3,23 @@
 
 int main()
 {
-	struct Engine engine = engine_init();
-	struct Game game = game_init();
+	Engine engine = engine_new();
 
-	engine_run(&engine, &game);
+	renderer_shader_new(&engine.renderer, "./shader.metal", VERTEX_SHADER);
+	// renderer_shader_new(&engine.renderer, "./frag.metal", FRAGMENT_SHADER);
+	renderer_pipeline_new(&engine.renderer, engine.wnd, TRIANGLE_PRIMITIVE);
 
-	game_terminate(&game);
-	engine_terminate(&engine);
+	Game game = game_new();
+
+	App app = {
+		.state = &game,
+		.update = game_update,
+		.render = game_render};
+
+	engine_run(&engine, &app);
+
+	game_release(&game);
+	engine_release(&engine);
 
 	return 0;
 }

@@ -1,10 +1,14 @@
 #pragma once
 
-struct Game
-{
-};
+#include "../engine/input.h"
+#include "base.h"
 
-struct Game game_init();
-void game_update(struct Game *game);
-void game_render(struct Game *game);
-void game_terminate(struct Game *game);
+typedef struct Game
+{
+	Base bases[1];
+} Game;
+
+Game game_new();
+void game_update(void *state, SDL_Event *events, unsigned int event_count, double delta_time);
+void game_render(void *state);
+void game_release(Game *game);

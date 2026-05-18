@@ -1,36 +1,41 @@
 #include "engine.h"
 #include "window.h"
-#include "../game/game.h"
+#include "renderer.h"
+#include "input.h"
 
-struct Engine engine_init()
+Engine engine_new()
 {
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 
-	SDL_Window *wnd = window_create();
+	SDL_Window *wnd = window_new();
+	Renderer renderer = renderer_new(wnd);
 
-	return (struct Engine){
-		.wnd = wnd};
+	return (Engine){
+		.wnd = wnd,
+		.renderer = renderer};
 }
 
-void engine_run(struct Engine *engine, struct Game *game)
+void engine_run(Engine *engine, App *app)
 {
+	SDL_Event events[1024] = {0};
+
 	bool should_exit = false;
 	while (!should_exit)
 	{
-		SDL_Event evnt;
+		int event_count = process_input(&should_exit, events);
 
-		while (SDL_PollEvent(&evnt))
-		{
-			if (evnt.type == SDL_EVENT_QUIT)
-			{
-				should_exit = true;
-			}
-		}
+		// TODO: add delta time
+		app->update(app->state, events, event_count, 0.0);
+
+		renderer_begin_frame(&engine->renderer, engine->wnd);
+		// app->render(app->state);
+		renderer_end_frame(&engine->renderer);
 	}
 }
 
-void engine_terminate(struct Engine *engine)
+void engine_release(Engine *engine)
 {
-	SDL_DestroyWindow(engine->wnd);
+	renderer_release(&engine->renderer);
+	window_release(engine->wnd);
 	SDL_Quit();
 }

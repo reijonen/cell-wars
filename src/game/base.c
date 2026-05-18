@@ -1,8 +1,8 @@
 #include "base.h"
 
-struct Base base_new()
+Base base_new()
 {
-	return (struct Base){
+	return (Base){
 		.faction = NEUTRAL,
 		.health = 100,
 		.pos = {
@@ -11,12 +11,12 @@ struct Base base_new()
 		.radius = 5};
 }
 
-void base_update(struct Base *base)
+void base_update(Base *base)
 {
 	base->health += 1;
 }
 
-void base_take_damage(struct Base *base, enum Faction from)
+void base_take_damage(Base *base, Faction from)
 {
 	if (base->health == 0)
 	{

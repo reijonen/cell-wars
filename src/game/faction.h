@@ -1,8 +1,8 @@
 #pragma once
 
-enum Faction
+typedef enum Faction
 {
 	NEUTRAL,
 	BLUE,
 	RED
-};
+} Faction;

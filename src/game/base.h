@@ -5,16 +5,16 @@
 #include "faction.h"
 #include "../engine/types/vec2.h"
 
-struct Base
+typedef struct Base
 {
-	enum Faction faction;
+	Faction faction;
 	size_t health;
-	struct Vec2 pos;
+	Vec2 pos;
 	const unsigned char radius;
-};
+} Base;
 
-struct Base base_new();
+Base base_new();
 
-void base_update(struct Base *base);
+void base_update(Base *base);
 
-void base_take_damage(struct Base *base, enum Faction from);
+void base_take_damage(Base *base, Faction from);
