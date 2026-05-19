@@ -19,11 +19,12 @@ typedef enum PrimitiveType
 	LINE_PRIMITIVE = SDL_GPU_PRIMITIVETYPE_LINELIST,
 } PrimitiveType;
 
-Renderer renderer_new(SDL_Window *wnd);
-void renderer_release(Renderer *renderer, SDL_Window *wnd);
-void renderer_begin_frame(Renderer *renderer, SDL_Window *wnd);
-void renderer_end_frame(Renderer *renderer);
+void renderer_init(SDL_Window *wnd);
+void renderer_release();
+void renderer_begin_frame();
+void renderer_end_frame();
 
-void renderer_shader_new(Renderer *renderer, const char *path);
-void renderer_buffer_new(Renderer *renderer, void *vertices, unsigned vertex_bytes, size_t vertex_count);
-void renderer_pipeline_new(Renderer *renderer, SDL_Window *wnd, unsigned stride, const PrimitiveType type);
+void renderer_shader_new(const char *path);
+void renderer_buffer_new(void *vertices, unsigned vertex_bytes, size_t vertex_count);
+void renderer_pipeline_new(unsigned stride, const PrimitiveType type);
+void renderer_update_uniform(void *data, size_t bytes);

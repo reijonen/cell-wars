@@ -3,9 +3,17 @@
 #include "game.h"
 #include "base.h"
 
+// TODO: tmp
+#include "engine/renderer.h"
+
+const unsigned WORLD_WIDTH = 1280;
+const unsigned WORLD_HEIGHT = 720;
+
 Game game_new()
 {
 	Game game;
+
+	game.camera = camera_init(1280, 720);
 
 	return game;
 }
@@ -36,6 +44,8 @@ void game_update(void *state, SDL_Event *events, unsigned int event_count, doubl
 	{
 		base_update(&game->bases[i]);
 	}
+
+	renderer_update_uniform(game->camera.projection, sizeof(game->camera.projection));
 }
 
 void game_render(void *state)

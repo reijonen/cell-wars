@@ -3,19 +3,18 @@
 #include "window.h"
 #include "input.h"
 
-Engine engine_new()
+static SDL_Window *wnd = NULL;
+
+void engine_init()
 {
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 
-	SDL_Window *wnd = window_new();
-	Renderer renderer = renderer_new(wnd);
+	wnd = window_new();
 
-	return (Engine){
-		.wnd = wnd,
-		.renderer = renderer};
+	renderer_init(wnd);
 }
 
-void engine_run(Engine *engine, App *app)
+void engine_run(App *app)
 {
 	SDL_Event events[1024] = {0};
 
@@ -27,15 +26,15 @@ void engine_run(Engine *engine, App *app)
 		// TODO: add delta time
 		app->update(app->state, events, event_count, 0.0);
 
-		renderer_begin_frame(&engine->renderer, engine->wnd);
+		renderer_begin_frame();
 		app->render(app->state);
-		renderer_end_frame(&engine->renderer);
+		renderer_end_frame();
 	}
 }
 
-void engine_release(Engine *engine)
+void engine_release()
 {
-	renderer_release(&engine->renderer, engine->wnd);
-	window_release(engine->wnd);
+	renderer_release();
+	window_release(wnd);
 	SDL_Quit();
 }

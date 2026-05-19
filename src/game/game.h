@@ -2,10 +2,12 @@
 
 #include "../engine/input.h"
 #include "base.h"
+#include "../engine/camera.h"
 
 typedef struct Game
 {
 	Base bases[1];
+	Camera camera;
 } Game;
 
 Game game_new();

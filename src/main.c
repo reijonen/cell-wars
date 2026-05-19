@@ -1,5 +1,6 @@
 #include "engine/engine.h"
 #include "game/game.h"
+#include "engine/camera.h"
 
 typedef struct Vertex
 {
@@ -7,19 +8,23 @@ typedef struct Vertex
 	float y;
 } Vertex;
 
+// {0.0, 0.5},
+// {0.5, -0.5},
+// {-0.5, -0.5},
+
 Vertex verts[] = {
-	{0.0, 0.5},
-	{0.5, -0.5},
-	{-0.5, -0.5},
+	{640, 540}, // (640 / 1280 * 2) - 1 = 0 ; (540 / 720 * 2) - 1 = 0.5
+	{960, 180}, // (960 / 1280 * 2) - 1 = 0.5 ; (180 / 720 * 2) - 1 = -0.5
+	{320, 180}, // (320 / 1280 * 2) - 1 ; (180 / 720 * 2) - 1 = -0.5
 };
 
 int main()
 {
-	Engine engine = engine_new();
+	engine_init();
 
-	renderer_shader_new(&engine.renderer, "./shader.metal");
-	renderer_buffer_new(&engine.renderer, verts, sizeof(Vertex), sizeof(verts) / sizeof(Vertex));
-	renderer_pipeline_new(&engine.renderer, engine.wnd, sizeof(Vertex), TRIANGLE_PRIMITIVE);
+	renderer_shader_new("./shader.metal");
+	renderer_buffer_new(verts, sizeof(Vertex), sizeof(verts) / sizeof(Vertex));
+	renderer_pipeline_new(sizeof(Vertex), TRIANGLE_PRIMITIVE);
 
 	Game game = game_new();
 
@@ -28,10 +33,10 @@ int main()
 		.update = game_update,
 		.render = game_render};
 
-	engine_run(&engine, &app);
+	engine_run(&app);
 
 	game_release(&game);
-	engine_release(&engine);
+	engine_release();
 
 	return 0;
 }

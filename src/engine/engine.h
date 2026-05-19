@@ -4,12 +4,6 @@
 
 #include "renderer.h"
 
-typedef struct Engine
-{
-	SDL_Window *wnd;
-	Renderer renderer;
-} Engine;
-
 typedef struct App
 {
 	void *state;
@@ -17,7 +11,7 @@ typedef struct App
 	void (*render)(void *state);
 } App;
 
-void engine_release(Engine *engine);
+void engine_release();
 
-Engine engine_new();
-void engine_run(Engine *engine, App *app);
+void engine_init();
+void engine_run(App *app);
