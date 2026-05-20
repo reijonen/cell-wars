@@ -195,7 +195,8 @@ void renderer_begin_frame()
 void renderer_end_frame()
 {
 	// TODO: nää pitää varmaan jotenkin definee Game:ssa kun uploadaa buffereita - ja ehkä pitää muutenkin controlloida jos on erilaisia objekteja, esim text
-	SDL_DrawGPUPrimitives(renderer.renderPass, 3, 1, 0, 0);
+	// TODO: miten tehdä dynaamisesti
+	SDL_DrawGPUPrimitives(renderer.renderPass, 18, 1, 0, 0);
 	SDL_EndGPURenderPass(renderer.renderPass);
 	SDL_SubmitGPUCommandBuffer(renderer.commandBuffer);
 }

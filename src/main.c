@@ -8,18 +8,35 @@ typedef struct Vertex
 	float y;
 } Vertex;
 
-// {0.0, 0.5},
-// {0.5, -0.5},
-// {-0.5, -0.5},
+// Vertex verts[] = {
+// 	{640, 540}, // (640 / 1280 * 2) - 1 = 0 ; (540 / 720 * 2) - 1 = 0.5
+// 	{960, 180}, // (960 / 1280 * 2) - 1 = 0.5 ; (180 / 720 * 2) - 1 = -0.5
+// 	{320, 180}, // (320 / 1280 * 2) - 1 ; (180 / 720 * 2) - 1 = -0.5
+// };
 
-Vertex verts[] = {
-	{640, 540}, // (640 / 1280 * 2) - 1 = 0 ; (540 / 720 * 2) - 1 = 0.5
-	{960, 180}, // (960 / 1280 * 2) - 1 = 0.5 ; (180 / 720 * 2) - 1 = -0.5
-	{320, 180}, // (320 / 1280 * 2) - 1 ; (180 / 720 * 2) - 1 = -0.5
-};
+void generate_quad(Vertex *verts, Vec2 top_left, unsigned size)
+{
+	verts[0].x = top_left.x;
+	verts[0].y = top_left.y;
+	verts[1].x = top_left.x + size;
+	verts[1].y = top_left.y;
+	verts[2].x = top_left.x;
+	verts[2].y = top_left.y - size;
+	verts[3].x = top_left.x + size;
+	verts[3].y = top_left.y;
+	verts[4].x = top_left.x + size;
+	verts[4].y = top_left.y - size;
+	verts[5].x = top_left.x;
+	verts[5].y = top_left.y - size;
+}
 
 int main()
 {
+	Vertex verts[18] = {0};
+	generate_quad(verts, (Vec2){100, 100}, 50);
+	generate_quad(verts + 6, (Vec2){300, 200}, 50);
+	generate_quad(verts + 12, (Vec2){500, 300}, 50);
+
 	engine_init();
 
 	renderer_shader_new("./shader.metal");

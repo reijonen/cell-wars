@@ -25,11 +25,6 @@ VertexOut vertex vertexMain(
 	VertexIn in [[stage_in]],
 	constant float4x4* projection [[buffer(0)]]
 ) {
-	// float x = (in.pos.x / size->width * 2) - 1;
-	// float y = (in.pos.y / size->height * 2) - 1;
-	// VertexOut out;
-	// out.pos = float4(x, y, 0.0, 1.0);
-
 	VertexOut out;
 
 	out.pos = *projection * float4(in.pos.x, in.pos.y, 0.0, 1.0);
