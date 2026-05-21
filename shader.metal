@@ -3,16 +3,12 @@ using namespace metal;
 
 struct VertexIn {
 	float2 pos [[attribute(0)]];
+	half4 color [[attribute(1)]];
 };
 
 struct VertexOut {
 	float4 pos [[position]];
-};
-
-struct WorldSize
-{
-	unsigned int width;
-	unsigned int height;
+	half4 color;
 };
 
 // For MSL/metallib, use the following order:
@@ -28,6 +24,7 @@ VertexOut vertex vertexMain(
 	VertexOut out;
 
 	out.pos = *projection * float4(in.pos.x, in.pos.y, 0.0, 1.0);
+	out.color = in.color;
 
 	return out;
 }
@@ -35,5 +32,5 @@ VertexOut vertex vertexMain(
 half4 fragment fragmentMain( 
     VertexOut in [[stage_in]]
 ) {
-    return half4(1.0, 1.0, 1.0, 1.0);
+    return in.color;
 }

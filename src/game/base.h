@@ -9,11 +9,12 @@ typedef struct Base
 {
 	Faction faction;
 	size_t health;
-	Vec2 pos;
-	const unsigned char radius;
+	const Vec2 pos;
+	const unsigned size;
+	// const unsigned char radius;
 } Base;
 
-Base base_new();
+Base base_new(Faction faction, Vec2 pos);
 
 void base_update(Base *base);
 

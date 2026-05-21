@@ -1,14 +1,14 @@
 #include "base.h"
 
-Base base_new()
+Base base_new(Faction faction, Vec2 pos)
 {
 	return (Base){
-		.faction = NEUTRAL,
+		.faction = faction,
 		.health = 100,
-		.pos = {
-			.x = 50,
-			.y = 50},
-		.radius = 5};
+		.pos = pos,
+		.size = 50,
+		// .radius = 5,
+	};
 }
 
 void base_update(Base *base)
@@ -28,7 +28,7 @@ void base_take_damage(Base *base, Faction from)
 		base->health -= 1;
 		if (base->health == 0)
 		{
-			base->faction = NEUTRAL;
+			base->faction = NEUTRAL_FACTION;
 		}
 	}
 }

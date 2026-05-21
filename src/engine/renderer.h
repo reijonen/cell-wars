@@ -26,5 +26,5 @@ void renderer_end_frame();
 
 void renderer_shader_new(const char *path);
 void renderer_buffer_new(void *vertices, unsigned vertex_bytes, size_t vertex_count);
-void renderer_pipeline_new(unsigned stride, const PrimitiveType type);
+void renderer_pipeline_new(unsigned stride, unsigned offset, const PrimitiveType type);
 void renderer_update_uniform(void *data, size_t bytes);

@@ -103,7 +103,7 @@ void renderer_buffer_new(void *vertices, unsigned vertex_bytes, size_t vertex_co
 	SDL_SubmitGPUCommandBuffer(renderer.commandBuffer);
 }
 
-void renderer_pipeline_new(unsigned stride, const PrimitiveType type)
+void renderer_pipeline_new(unsigned stride, unsigned offset, const PrimitiveType type)
 {
 	SDL_GPUGraphicsPipelineCreateInfo pci = {
 		.primitive_type = (SDL_GPUPrimitiveType)type,
@@ -120,13 +120,18 @@ void renderer_pipeline_new(unsigned stride, const PrimitiveType type)
 	pci.vertex_input_state.num_vertex_buffers = 1;
 	pci.vertex_input_state.vertex_buffer_descriptions = vbDec;
 
-	SDL_GPUVertexAttribute vattrib[1] = {0};
+	SDL_GPUVertexAttribute vattrib[2] = {0};
 	vattrib[0].buffer_slot = 0;
 	vattrib[0].location = 0;
 	vattrib[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
 	vattrib[0].offset = 0;
 
-	pci.vertex_input_state.num_vertex_attributes = 1;
+	vattrib[1].buffer_slot = 0;
+	vattrib[1].location = 1;
+	vattrib[1].format = SDL_GPU_VERTEXELEMENTFORMAT_UBYTE4_NORM;
+	vattrib[1].offset = offset;
+
+	pci.vertex_input_state.num_vertex_attributes = 2;
 	pci.vertex_input_state.vertex_attributes = vattrib;
 
 	SDL_GPUColorTargetDescription colorTargetDescriptions[1] = {0};

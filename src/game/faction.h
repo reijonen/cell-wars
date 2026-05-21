@@ -2,7 +2,7 @@
 
 typedef enum Faction
 {
-	NEUTRAL,
-	BLUE,
-	RED
+	NEUTRAL_FACTION,
+	BLUE_FACTION,
+	RED_FACTION
 } Faction;
