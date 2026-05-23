@@ -1,21 +1,26 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "faction.h"
 #include "../engine/types/vec2.h"
+#include "graph.h"
 
 typedef struct Base
 {
 	Faction faction;
 	size_t health;
-	const Vec2 pos;
-	const unsigned size;
+	Vec2 pos;
+	unsigned size;
 	// const unsigned char radius;
+	unsigned nid;
 } Base;
 
-Base base_new(Faction faction, Vec2 pos);
+void base_init(Base *b, NID id, Faction faction, Vec2 pos, unsigned size);
 
 void base_update(Base *base);
+
+bool base_hit_test(Base *base, Vec2 hit);
 
 void base_take_damage(Base *base, Faction from);

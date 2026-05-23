@@ -5,11 +5,11 @@
 
 static SDL_Window *wnd = NULL;
 
-void engine_init()
+void engine_init(unsigned window_width, unsigned window_height)
 {
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 
-	wnd = window_new();
+	wnd = window_new(window_width, window_height);
 
 	renderer_init(wnd);
 }

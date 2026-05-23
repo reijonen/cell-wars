@@ -33,46 +33,57 @@ void renderer_init(SDL_Window *wnd)
 
 void renderer_release()
 {
-	SDL_ReleaseGPUShader(renderer.device, renderer.vertexShader);
-	SDL_ReleaseGPUShader(renderer.device, renderer.fragmentShader);
-	SDL_ReleaseGPUBuffer(renderer.device, renderer.vertexBuffer);
+	for (unsigned i = 0; i < PIPELINE_COUNT; i++)
+	{
+		for (unsigned j = 0; j < SHADERS_PER_PIPELINE_COUNT; j++)
+		{
+			SDL_ReleaseGPUShader(renderer.device, renderer.shaders[i][j]);
+		}
+	}
+	for (unsigned i = 0; i < BUFFER_COUNT; i++)
+	{
+		SDL_ReleaseGPUBuffer(renderer.device, renderer.buffers[i]);
+	}
 	SDL_DestroyGPUDevice(renderer.device);
 	// TODO: muut?
 }
 
-void renderer_shader_new(const char *path)
+void renderer_shader_new(unsigned char pipeline_idx, char *path, ShaderType type, unsigned char uniform_count)
 {
 	size_t shaderSize;
 	void *shaderSrc = SDL_LoadFile(path, &shaderSize);
+	if (!shaderSrc)
+	{
+		printf("Failed to load shader at path: %s\nError: %s\n", path, SDL_GetError());
+		exit(1);
+	}
 
-	SDL_GPUShaderCreateInfo vertCtx = {0};
-	vertCtx.code = (Uint8 *)shaderSrc,
-	vertCtx.code_size = shaderSize,
-	vertCtx.entrypoint = "vertexMain",
-	vertCtx.format = SDL_GPU_SHADERFORMAT_MSL,
-	vertCtx.stage = SDL_GPU_SHADERSTAGE_VERTEX,
-	vertCtx.num_uniform_buffers = 1;
-	renderer.vertexShader = SDL_CreateGPUShader(renderer.device, &vertCtx);
-
-	SDL_GPUShaderCreateInfo fragCtx = {0};
-	fragCtx.code = (Uint8 *)shaderSrc,
-	fragCtx.code_size = shaderSize,
-	fragCtx.entrypoint = "fragmentMain",
-	fragCtx.format = SDL_GPU_SHADERFORMAT_MSL,
-	fragCtx.stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
-	renderer.fragmentShader = SDL_CreateGPUShader(renderer.device, &fragCtx);
-
+	SDL_GPUShaderCreateInfo ctx = {0};
+	ctx.code = (Uint8 *)shaderSrc,
+	ctx.code_size = shaderSize,
+	ctx.entrypoint = type == VERTEX_SHADER ? "vertexMain" : "fragmentMain",
+	ctx.format = SDL_GPU_SHADERFORMAT_MSL,
+	ctx.stage = (SDL_GPUShaderStage)type,
+	ctx.num_uniform_buffers = uniform_count;
+	SDL_GPUShader *shader = SDL_CreateGPUShader(renderer.device, &ctx);
+	if (!shader)
+	{
+		printf("Failed to create shader of type: %s\nError: %s\n", type == VERTEX_SHADER ? "VERTEX_SHADER" : "FRAGMENT_SHADER", SDL_GetError());
+		exit(1);
+	}
 	SDL_free(shaderSrc);
+
+	renderer.shaders[pipeline_idx][type] = shader;
 }
 
-void renderer_buffer_new(void *vertices, unsigned vertex_bytes, size_t vertex_count)
+void renderer_buffer_new(unsigned index, void *vertices, unsigned vertex_bytes, size_t vertex_count)
 {
 	size_t vertexBytes = vertex_bytes * vertex_count;
 
 	SDL_GPUBufferCreateInfo bci = {0};
 	bci.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
 	bci.size = vertexBytes;
-	renderer.vertexBuffer = SDL_CreateGPUBuffer(renderer.device, &bci);
+	renderer.buffers[index] = SDL_CreateGPUBuffer(renderer.device, &bci);
 
 	// TODO: release gpu buff
 
@@ -90,7 +101,7 @@ void renderer_buffer_new(void *vertices, unsigned vertex_bytes, size_t vertex_co
 	source.offset = 0;
 
 	SDL_GPUBufferRegion dest = {0};
-	dest.buffer = renderer.vertexBuffer;
+	dest.buffer = renderer.buffers[index];
 	dest.size = vertexBytes;
 	dest.offset = 0;
 
@@ -103,12 +114,12 @@ void renderer_buffer_new(void *vertices, unsigned vertex_bytes, size_t vertex_co
 	SDL_SubmitGPUCommandBuffer(renderer.commandBuffer);
 }
 
-void renderer_pipeline_new(unsigned stride, unsigned offset, const PrimitiveType type)
+void renderer_pipeline_new(unsigned index, unsigned stride, unsigned offset, const PrimitiveType type)
 {
 	SDL_GPUGraphicsPipelineCreateInfo pci = {
 		.primitive_type = (SDL_GPUPrimitiveType)type,
-		.vertex_shader = renderer.vertexShader,
-		.fragment_shader = renderer.fragmentShader,
+		.vertex_shader = renderer.shaders[index][VERTEX_SHADER],
+		.fragment_shader = renderer.shaders[index][FRAGMENT_SHADER],
 		.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL};
 
 	SDL_GPUVertexBufferDescription vbDec[1] = {0};
@@ -147,21 +158,21 @@ void renderer_pipeline_new(unsigned stride, unsigned offset, const PrimitiveType
 	pci.target_info.num_color_targets = 1;
 	pci.target_info.color_target_descriptions = colorTargetDescriptions;
 
-	renderer.pipeline = SDL_CreateGPUGraphicsPipeline(renderer.device, &pci);
-	if (!renderer.pipeline)
+	renderer.pipelines[index] = SDL_CreateGPUGraphicsPipeline(renderer.device, &pci);
+	if (!renderer.pipelines[index])
 	{
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create graphics pipeline: %s\n", SDL_GetError());
 		exit(1);
 	}
 }
 
-void renderer_update_uniform(void *data, size_t bytes)
+void renderer_update_uniform(unsigned index, void *data, size_t bytes)
 {
-	renderer.commandBuffer = SDL_AcquireGPUCommandBuffer(renderer.device);
+	// renderer.commandBuffer = SDL_AcquireGPUCommandBuffer(renderer.device);
 
-	SDL_PushGPUVertexUniformData(renderer.commandBuffer, 0, data, bytes);
+	SDL_PushGPUVertexUniformData(renderer.commandBuffer, index, data, bytes);
 
-	SDL_SubmitGPUCommandBuffer(renderer.commandBuffer);
+	// SDL_SubmitGPUCommandBuffer(renderer.commandBuffer);
 }
 
 void renderer_begin_frame()
@@ -184,24 +195,25 @@ void renderer_begin_frame()
 	cti.store_op = SDL_GPU_STOREOP_STORE;
 
 	renderer.renderPass = SDL_BeginGPURenderPass(renderer.commandBuffer, &cti, 1, NULL);
+}
 
-	SDL_BindGPUGraphicsPipeline(renderer.renderPass, renderer.pipeline);
+// TODO: indexed rendering
+
+void renderer_draw(unsigned pipeline_index, unsigned buffer_index, unsigned vertex_count, unsigned instance_count)
+{
+	SDL_BindGPUGraphicsPipeline(renderer.renderPass, renderer.pipelines[pipeline_index]);
 
 	SDL_GPUBufferBinding vbindings[1];
-	vbindings[0].buffer = renderer.vertexBuffer;
+	vbindings[0].buffer = renderer.buffers[buffer_index];
 	vbindings[0].offset = 0;
 
 	SDL_BindGPUVertexBuffers(renderer.renderPass, 0, vbindings, 1);
-}
 
-// TODO: create ja update uniform
-// tai indexed rendering
+	SDL_DrawGPUPrimitives(renderer.renderPass, vertex_count, 3, 0, 0);
+}
 
 void renderer_end_frame()
 {
-	// TODO: nää pitää varmaan jotenkin definee Game:ssa kun uploadaa buffereita - ja ehkä pitää muutenkin controlloida jos on erilaisia objekteja, esim text
-	// TODO: miten tehdä dynaamisesti
-	SDL_DrawGPUPrimitives(renderer.renderPass, 18, 1, 0, 0);
 	SDL_EndGPURenderPass(renderer.renderPass);
 	SDL_SubmitGPUCommandBuffer(renderer.commandBuffer);
 }

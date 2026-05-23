@@ -1,12 +1,12 @@
 #include <stdlib.h>
 #include <SDL3/SDL.h>
 
-SDL_Window *window_new()
+SDL_Window *window_new(unsigned width, unsigned height)
 {
 	SDL_Window *wnd = SDL_CreateWindow(
 		"test",
-		1280,
-		720,
+		width,
+		height,
 		SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_METAL);
 	if (!wnd)
 	{

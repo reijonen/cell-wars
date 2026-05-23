@@ -19,11 +19,11 @@ struct VertexOut {
 
 VertexOut vertex vertexMain(
 	VertexIn in [[stage_in]],
-	constant float4x4* projection [[buffer(0)]]
+	constant float4x4& projection [[buffer(0)]]
 ) {
 	VertexOut out;
-
-	out.pos = *projection * float4(in.pos.x, in.pos.y, 0.0, 1.0);
+	
+	out.pos = projection * float4(in.pos.x, in.pos.y, 0.0, 1.0);
 	out.color = in.color;
 
 	return out;

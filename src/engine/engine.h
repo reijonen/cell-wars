@@ -13,5 +13,5 @@ typedef struct App
 
 void engine_release();
 
-void engine_init();
+void engine_init(unsigned window_width, unsigned window_height);
 void engine_run(App *app);
