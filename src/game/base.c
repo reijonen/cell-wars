@@ -13,7 +13,7 @@ void base_init(Base *b, NID id, Faction faction, Vec2 pos, unsigned size)
 
 void base_update(Base *base)
 {
-	base->health += 1;
+	// base->health += 1;
 }
 
 bool base_hit_test(Base *base, Vec2 hit)
@@ -25,16 +25,16 @@ bool base_hit_test(Base *base, Vec2 hit)
 	return false;
 }
 
-void base_take_damage(Base *base, Faction from)
+void base_take_damage(Base *base, Faction from, unsigned amount)
 {
 	if (base->health == 0)
 	{
-		base->health += 1;
+		base->health += amount;
 		base->faction = from;
 	}
 	else
 	{
-		base->health -= 1;
+		base->health -= amount;
 		if (base->health == 0)
 		{
 			base->faction = NEUTRAL_FACTION;

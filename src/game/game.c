@@ -72,6 +72,7 @@ void fleets_new(Game *game, Base *first, Base *second)
 		direction.x,
 		direction.y,
 	};
+	af.faction = first->faction;
 
 	game->fleets[game->fleets_active++] = af;
 }
@@ -117,21 +118,19 @@ void fleets_update(Game *game)
 		float dx = end->pos.x - begin->pos.x;
 		float dy = end->pos.y - begin->pos.y;
 
-		printf("shape x: %f\n", fleet->shape.x);
-		printf("end x: %f\n", end->pos.x);
-
+		bool end_reached = false;
 		if (dx > 0)
 		{
 			if (fleet->shape.x > (end->pos.x + end->size / 2))
 			{
-				game->fleets_active = 0;
+				end_reached = true;
 			}
 		}
 		else if (dx < 0)
 		{
 			if (fleet->shape.x < (end->pos.x + end->size / 2))
 			{
-				game->fleets_active = 0;
+				end_reached = true;
 			}
 		}
 
@@ -139,15 +138,21 @@ void fleets_update(Game *game)
 		{
 			if (fleet->shape.y > (end->pos.y - end->size / 2))
 			{
-				game->fleets_active = 0;
+				end_reached = true;
 			}
 		}
 		else if (dy < 0)
 		{
 			if (fleet->shape.y < (end->pos.y - end->size / 2))
 			{
-				game->fleets_active = 0;
+				end_reached = true;
 			}
+		}
+
+		if (end_reached)
+		{
+			game->fleets_active = 0;
+			base_take_damage(end, fleet->faction, fleet->size);
 		}
 	}
 }
@@ -165,7 +170,6 @@ void game_update(void *state, SDL_Event *events, unsigned int event_count, doubl
 		{
 			if (events[i].button.button == 1)
 			{
-				bool hitted = false;
 				// TODO: WINDOW_HEIGHT
 				Vec2 hit = {events[i].button.x, 720 - events[i].button.y};
 				for (unsigned i = 0; i < BASE_COUNT; i++)
@@ -173,7 +177,6 @@ void game_update(void *state, SDL_Event *events, unsigned int event_count, doubl
 					if (base_hit_test(&(game->bases[i]), hit))
 					{
 						printf("HIT xy: %f, %f\n", hit.x, hit.y);
-						hitted = true;
 						game->is_dragging = true;
 						game->line.x = hit.x;
 						game->line.y = hit.y;
@@ -181,10 +184,6 @@ void game_update(void *state, SDL_Event *events, unsigned int event_count, doubl
 						game->line.w = hit.y;
 						first_base = &(game->bases[i]);
 					}
-				}
-				if (!hitted)
-				{
-					game->line = (Vec4){0};
 				}
 			}
 
@@ -207,7 +206,6 @@ void game_update(void *state, SDL_Event *events, unsigned int event_count, doubl
 					}
 				}
 				game->is_dragging = false;
-				game->line = (Vec4){0};
 			}
 
 			continue;
@@ -239,11 +237,17 @@ void game_render(void *state)
 	renderer_draw(2, 2, 16, 0);
 	renderer_draw(0, 0, 32, 0);
 
-	renderer_update_uniform(1, &game->fleets[0].shape, sizeof(Vec4));
-	renderer_draw(3, 3, 3, 3);
+	if (game->fleets_active > 0)
+	{
+		renderer_update_uniform(1, &game->fleets[0].shape, sizeof(Vec4));
+		renderer_draw(3, 3, 3, 3);
+	}
 
-	renderer_update_uniform(LINE_UNIFORM_IDX, &game->line, sizeof(Vec4));
-	renderer_draw(1, 1, 2, 1);
+	if (game->is_dragging)
+	{
+		renderer_update_uniform(LINE_UNIFORM_IDX, &game->line, sizeof(Vec4));
+		renderer_draw(1, 1, 2, 1);
+	}
 }
 
 void game_release(Game *game)

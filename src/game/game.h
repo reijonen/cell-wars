@@ -19,6 +19,7 @@ typedef struct AttackFleet
 	AttackDirection dir;
 	unsigned size;
 	Vec4 shape;
+	Faction faction;
 } AttackFleet;
 
 typedef struct Game

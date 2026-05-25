@@ -23,4 +23,5 @@ void base_update(Base *base);
 
 bool base_hit_test(Base *base, Vec2 hit);
 
-void base_take_damage(Base *base, Faction from);
+// TODO: handle color conversion in shader
+void base_take_damage(Base *base, Faction from, unsigned amount);
