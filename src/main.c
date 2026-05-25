@@ -141,6 +141,9 @@ void generate_edge_vertices(Vertex *v, Base *bases, Node *nodes, Edge *edges)
 #define UNIT_PIPELINE_IDX 3
 #define UNIT_BUFF_IDX 3
 
+#define HEALTH_PIPELINE_IDX 4
+#define HEALTH_BUFF_IDX 4
+
 #define BASE_SIZE 50
 
 int main()
@@ -322,6 +325,28 @@ int main()
 		sizeof(Vertex),
 		sizeof(Vec2),
 		TRIANGLE_PRIMITIVE);
+
+	Vertex health_vertices[BASE_COUNT] = {0};
+	for (unsigned i = 0; i < BASE_COUNT; i++)
+	{
+		health_vertices[i].pos = (Vec2){
+			bases[i].pos.x + bases[i].size / 2,
+			bases[i].pos.y - bases[i].size / 2};
+		health_vertices[i].color = (Color){255, 255, 255, 255};
+	}
+
+	renderer_shader_new(HEALTH_PIPELINE_IDX, "./health.metal", VERTEX_SHADER, 4);
+	renderer_shader_new(HEALTH_PIPELINE_IDX, "./health.metal", FRAGMENT_SHADER, 0);
+	renderer_buffer_new(
+		HEALTH_BUFF_IDX,
+		health_vertices,
+		sizeof(Vertex),
+		sizeof(health_vertices) / sizeof(Vertex));
+	renderer_pipeline_new(
+		HEALTH_PIPELINE_IDX,
+		sizeof(Vertex),
+		sizeof(Vec2),
+		POINT_PRIMITIVE);
 
 	Game game = game_new(WINDOW_WIDTH, WINDOW_HEIGHT, bases, nodes, edges);
 

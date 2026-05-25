@@ -2,9 +2,9 @@
 
 #include <SDL3/SDL.h>
 
-#define PIPELINE_COUNT 4
+#define PIPELINE_COUNT 5
 #define SHADERS_PER_PIPELINE_COUNT 2
-#define BUFFER_COUNT 4
+#define BUFFER_COUNT 5
 
 typedef struct Renderer
 {
@@ -25,6 +25,7 @@ typedef enum PrimitiveType
 {
 	TRIANGLE_PRIMITIVE = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
 	LINE_PRIMITIVE = SDL_GPU_PRIMITIVETYPE_LINELIST,
+	POINT_PRIMITIVE = SDL_GPU_PRIMITIVETYPE_POINTLIST,
 } PrimitiveType;
 
 typedef enum ShaderType

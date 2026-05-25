@@ -209,7 +209,7 @@ void renderer_draw(unsigned pipeline_index, unsigned buffer_index, unsigned vert
 
 	SDL_BindGPUVertexBuffers(renderer.renderPass, 0, vbindings, 1);
 
-	SDL_DrawGPUPrimitives(renderer.renderPass, vertex_count, 3, 0, 0);
+	SDL_DrawGPUPrimitives(renderer.renderPass, vertex_count, instance_count, 0, 0);
 }
 
 void renderer_end_frame()

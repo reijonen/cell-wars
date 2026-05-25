@@ -5,7 +5,7 @@
 void base_init(Base *b, NID id, Faction faction, Vec2 pos, unsigned size)
 {
 	b->faction = faction;
-	b->health = 100;
+	b->health = 10;
 	b->pos = pos;
 	b->size = size;
 	b->nid = id;
@@ -34,7 +34,15 @@ void base_take_damage(Base *base, Faction from, unsigned amount)
 	}
 	else
 	{
-		base->health -= amount;
+		if (amount >= base->health)
+		{
+			base->health = 0;
+		}
+		else
+		{
+			base->health -= amount;
+		}
+
 		if (base->health == 0)
 		{
 			base->faction = NEUTRAL_FACTION;
