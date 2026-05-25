@@ -10,6 +10,7 @@
 
 #define PROJECTION_UNIFORM_IDX 0
 #define LINE_UNIFORM_IDX 1
+#define BASE_FACTIONS_UNIFORM_IDX 2
 #define HEALTHS_UNIFORM_IDX 2
 #define HEALTH_FACTIONS_UNIFORM_IDX 3
 
@@ -64,9 +65,9 @@ EID find_shared_edge(Game *game, Base *first, Base *second)
 
 void fleets_new(Game *game, Base *first, Base *second)
 {
-	size_t sent_amount = first->health / 2;
-	if (sent_amount == 0)
+	if (first->health <= 1)
 		return;
+	size_t sent_amount = (first->health + 1) / 2;
 
 	float top_center_x = first->pos.x + first->size / 2;
 	float top_center_y = first->pos.y - first->size / 2;
@@ -180,6 +181,8 @@ void fleets_update(Game *game)
 void game_update(void *state, SDL_Event *events, unsigned int event_count, double delta_time)
 {
 	Game *game = (Game *)state;
+	static double regen_accum_seconds = 0.0;
+	regen_accum_seconds += delta_time;
 	// printf("Line x: %f, y: %f, z: %f, w: %f\n", game->line.x, game->line.y, game->line.z, game->line.w);
 
 	for (unsigned int i = 0; i < event_count; i++)
@@ -250,6 +253,18 @@ void game_update(void *state, SDL_Event *events, unsigned int event_count, doubl
 		base_update(&game->bases[i]);
 		fleets_update(game);
 	}
+
+	while (regen_accum_seconds >= 1.0)
+	{
+		for (unsigned i = 0; i < BASE_COUNT; i++)
+		{
+			if (game->bases[i].faction != NEUTRAL_FACTION)
+			{
+				game->bases[i].health += 1;
+			}
+		}
+		regen_accum_seconds -= 1.0;
+	}
 }
 
 void game_render(void *state)
@@ -270,6 +285,7 @@ void game_render(void *state)
 
 	renderer_update_uniform(PROJECTION_UNIFORM_IDX, &game->camera.projection, sizeof(mat4x4));
 	renderer_draw(EDGE_PIPELINE_IDX, EDGE_BUFF_IDX, 16, 1);
+	renderer_update_uniform(BASE_FACTIONS_UNIFORM_IDX, factions, sizeof(factions));
 	renderer_draw(SHAPE_PIPELINE_IDX, SHAPE_BUFF_IDX, 30, 1);
 
 	renderer_update_uniform(HEALTHS_UNIFORM_IDX, healths, sizeof(healths));

@@ -34,18 +34,20 @@ void base_take_damage(Base *base, Faction from, size_t amount)
 	}
 	else
 	{
-		if (amount >= base->health)
+		if (amount > base->health)
+		{
+			size_t overflow = amount - base->health;
+			base->health = overflow;
+			base->faction = from;
+		}
+		else if (amount == base->health)
 		{
 			base->health = 0;
+			base->faction = NEUTRAL_FACTION;
 		}
 		else
 		{
 			base->health -= amount;
-		}
-
-		if (base->health == 0)
-		{
-			base->faction = NEUTRAL_FACTION;
 		}
 	}
 }

@@ -252,16 +252,15 @@ int main()
 		BASE_SIZE);
 
 	Vertex base_vertices[BASE_COUNT * 6] = {0};
-	generate_quad(base_vertices, bases[0].pos, bases[0].size, BLUE_FACTION);
-	generate_quad(base_vertices + 6, bases[4].pos, bases[4].size, RED_FACTION);
-	generate_quad(base_vertices + 12, bases[1].pos, bases[1].size, NEUTRAL_FACTION);
-	generate_quad(base_vertices + 18, bases[2].pos, bases[2].size, NEUTRAL_FACTION);
-	generate_quad(base_vertices + 24, bases[3].pos, bases[3].size, NEUTRAL_FACTION);
+	for (unsigned i = 0; i < BASE_COUNT; i++)
+	{
+		generate_quad(base_vertices + (i * 6), bases[i].pos, bases[i].size, bases[i].faction);
+	}
 
 	engine_init(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	renderer_shader_new(SHAPE_PIPELINE_IDX, "./triangle.metal", VERTEX_SHADER, 1);
-	renderer_shader_new(SHAPE_PIPELINE_IDX, "./triangle.metal", FRAGMENT_SHADER, 0);
+	renderer_shader_new(SHAPE_PIPELINE_IDX, "./base.metal", VERTEX_SHADER, 3);
+	renderer_shader_new(SHAPE_PIPELINE_IDX, "./base.metal", FRAGMENT_SHADER, 0);
 	renderer_buffer_new(
 		SHAPE_BUFF_IDX,
 		base_vertices,
