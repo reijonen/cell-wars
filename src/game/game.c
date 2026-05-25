@@ -224,7 +224,7 @@ void fleets_update(Game *game)
 		{
 			AttackFleet *second = &(game->fleets[j]);
 
-			if (first->edge == second->edge && first->dir != second->dir)
+			if (first->edge == second->edge && first->dir != second->dir && first->faction != second->faction)
 			{
 				float dx = first->shape.x - second->shape.x;
 				float dy = first->shape.y - second->shape.y;
