@@ -216,7 +216,10 @@ void game_update(void *state, SDL_Event *events, unsigned int event_count, doubl
 					{
 						printf("HIT xy: %f, %f\n", hit.x, hit.y);
 						Base *second_base = &(game->bases[i]);
-						fleets_new(game, first_base, second_base);
+						if (first_base != NULL && first_base->faction != NEUTRAL_FACTION)
+						{
+							fleets_new(game, first_base, second_base);
+						}
 					}
 				}
 				game->is_dragging = false;
