@@ -24,8 +24,57 @@
 #define UNIT_BUFF_IDX 3
 #define HEALTH_PIPELINE_IDX 4
 #define HEALTH_BUFF_IDX 4
+#define FLEET_CLASH_DISTANCE 4.0f
 
 Base *first_base = NULL;
+
+static void fleet_remove(Game *game, unsigned index)
+{
+	if (game->fleets_active == 0)
+		return;
+
+	unsigned last = game->fleets_active - 1;
+	if (index != last)
+	{
+		game->fleets[index] = game->fleets[last];
+	}
+	game->fleets_active--;
+}
+
+static bool fleet_find_endpoints(Game *game, AttackFleet *fleet, Base **begin, Base **end)
+{
+	*begin = NULL;
+	*end = NULL;
+
+	for (unsigned j = 0; j < BASE_COUNT; j++)
+	{
+		if (game->bases[j].nid == game->edges[fleet->edge].endpoints[0])
+		{
+			if (fleet->dir == RIGHT)
+			{
+				*end = &(game->bases[j]);
+			}
+			else
+			{
+				*begin = &(game->bases[j]);
+			}
+		}
+
+		if (game->bases[j].nid == game->edges[fleet->edge].endpoints[1])
+		{
+			if (fleet->dir == LEFT)
+			{
+				*end = &(game->bases[j]);
+			}
+			else
+			{
+				*begin = &(game->bases[j]);
+			}
+		}
+	}
+
+	return *begin != NULL && *end != NULL;
+}
 
 Game game_new(unsigned window_width, unsigned window_height, Base *bases, Node *nodes, Edge *edges)
 {
@@ -65,6 +114,9 @@ EID find_shared_edge(Game *game, Base *first, Base *second)
 
 void fleets_new(Game *game, Base *first, Base *second)
 {
+	if (game->fleets_active >= 128)
+		return;
+
 	if (first->health <= 1)
 		return;
 	size_t sent_amount = (first->health + 1) / 2;
@@ -100,40 +152,20 @@ void fleets_new(Game *game, Base *first, Base *second)
 
 void fleets_update(Game *game)
 {
-	for (unsigned i = 0; i < game->fleets_active; i++)
+	unsigned i = 0;
+	while (i < game->fleets_active)
 	{
 		AttackFleet *fleet = &(game->fleets[i]);
 
-		fleet->shape.x += fleet->shape.z * 0.25;
-		fleet->shape.y += fleet->shape.w * 0.25;
+		fleet->shape.x += fleet->shape.z;
+		fleet->shape.y += fleet->shape.w;
 
 		Base *begin = NULL;
 		Base *end = NULL;
-		for (unsigned j = 0; j < BASE_COUNT; j++)
+		if (!fleet_find_endpoints(game, fleet, &begin, &end))
 		{
-			if (game->bases[j].nid == game->edges[fleet->edge].endpoints[0])
-			{
-				if (fleet->dir == RIGHT)
-				{
-					end = &(game->bases[j]);
-				}
-				else
-				{
-					begin = &(game->bases[j]);
-				}
-			}
-
-			if (game->bases[j].nid == game->edges[fleet->edge].endpoints[1])
-			{
-				if (fleet->dir == LEFT)
-				{
-					end = &(game->bases[j]);
-				}
-				else
-				{
-					begin = &(game->bases[j]);
-				}
-			}
+			fleet_remove(game, i);
+			continue;
 		}
 
 		float dx = end->pos.x - begin->pos.x;
@@ -172,8 +204,61 @@ void fleets_update(Game *game)
 
 		if (end_reached)
 		{
-			game->fleets_active = 0;
 			base_take_damage(end, fleet->faction, fleet->size);
+			fleet_remove(game, i);
+			continue;
+		}
+
+		i++;
+	}
+
+	i = 0;
+	while (i < game->fleets_active)
+	{
+		AttackFleet *first = &(game->fleets[i]);
+		bool first_removed = false;
+
+		unsigned j = i + 1;
+		while (j < game->fleets_active)
+		{
+			AttackFleet *second = &(game->fleets[j]);
+
+			if (first->edge == second->edge && first->dir != second->dir)
+			{
+				float dx = first->shape.x - second->shape.x;
+				float dy = first->shape.y - second->shape.y;
+				float distance_sq = (dx * dx) + (dy * dy);
+				if (distance_sq <= (FLEET_CLASH_DISTANCE * FLEET_CLASH_DISTANCE))
+				{
+					if (first->size == second->size)
+					{
+						fleet_remove(game, j);
+						fleet_remove(game, i);
+						first_removed = true;
+						break;
+					}
+					else if (first->size > second->size)
+					{
+						first->size -= second->size;
+						fleet_remove(game, j);
+						continue;
+					}
+					else
+					{
+						second->size -= first->size;
+						fleet_remove(game, i);
+						first_removed = true;
+						break;
+					}
+				}
+			}
+
+			j++;
+		}
+
+		if (!first_removed)
+		{
+			i++;
 		}
 	}
 }
@@ -251,9 +336,10 @@ void game_update(void *state, SDL_Event *events, unsigned int event_count, doubl
 	for (unsigned i = 0; i < BASE_COUNT; i++)
 	{
 		base_update(&game->bases[i]);
-		fleets_update(game);
 	}
+	fleets_update(game);
 
+	// TODO: move to base_update
 	while (regen_accum_seconds >= 1.0)
 	{
 		for (unsigned i = 0; i < BASE_COUNT; i++)
@@ -292,10 +378,10 @@ void game_render(void *state)
 	renderer_update_uniform(HEALTH_FACTIONS_UNIFORM_IDX, factions, sizeof(factions));
 	renderer_draw(HEALTH_PIPELINE_IDX, HEALTH_BUFF_IDX, BASE_COUNT, max_health);
 
-	if (game->fleets_active > 0)
+	for (unsigned i = 0; i < game->fleets_active; i++)
 	{
-		renderer_update_uniform(LINE_UNIFORM_IDX, &game->fleets[0].shape, sizeof(Vec4));
-		renderer_draw(UNIT_PIPELINE_IDX, UNIT_BUFF_IDX, 3, 3);
+		renderer_update_uniform(LINE_UNIFORM_IDX, &game->fleets[i].shape, sizeof(Vec4));
+		renderer_draw(UNIT_PIPELINE_IDX, UNIT_BUFF_IDX, 3, 1);
 	}
 
 	if (game->is_dragging)
