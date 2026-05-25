@@ -27,27 +27,31 @@ bool base_hit_test(Base *base, Vec2 hit)
 
 void base_take_damage(Base *base, Faction from, size_t amount)
 {
-	if (base->health == 0)
+	if (amount == 0)
+	{
+		return;
+	}
+
+	if (base->faction == from)
 	{
 		base->health += amount;
-		base->faction = from;
+		return;
 	}
-	else
+
+	if (base->health == 0)
 	{
-		if (amount > base->health)
-		{
-			size_t overflow = amount - base->health;
-			base->health = overflow;
-			base->faction = from;
-		}
-		else if (amount == base->health)
-		{
-			base->health = 0;
-			base->faction = NEUTRAL_FACTION;
-		}
-		else
-		{
-			base->health -= amount;
-		}
+		base->faction = from;
+		base->health = amount;
+		return;
 	}
+
+	if (amount >= base->health)
+	{
+		size_t overflow = amount - base->health;
+		base->faction = from;
+		base->health = overflow;
+		return;
+	}
+
+	base->health -= amount;
 }
