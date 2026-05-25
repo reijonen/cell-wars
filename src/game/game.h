@@ -2,30 +2,16 @@
 
 #include "../engine/input.h"
 #include "base.h"
+#include "fleet.h"
 #include "../engine/camera.h"
 #include "engine/types/vec4.h"
 
 #define BASE_COUNT 5
 
-typedef enum AttackDirection
-{
-	LEFT,
-	RIGHT
-} AttackDirection;
-
-typedef struct AttackFleet
-{
-	EID edge;
-	AttackDirection dir;
-	size_t size;
-	Vec4 shape;
-	Faction faction;
-} AttackFleet;
-
 typedef struct Game
 {
 	Base *bases;
-	AttackFleet fleets[128];
+	AttackFleet fleets[FLEET_MAX_ACTIVE];
 	unsigned char fleets_active;
 	Node *nodes;
 	Edge *edges;
