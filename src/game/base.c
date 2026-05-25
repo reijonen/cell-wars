@@ -2,13 +2,12 @@
 
 #include <stdio.h>
 
-void base_init(Base *b, NID id, Faction faction, Vec2 pos, unsigned size)
+void base_init(Base *b, Faction faction, Vec2 pos, unsigned size)
 {
 	b->faction = faction;
 	b->health = 10;
 	b->pos = pos;
 	b->size = size;
-	b->nid = id;
 }
 
 void base_update(Base *base)

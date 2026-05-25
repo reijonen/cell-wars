@@ -3,6 +3,7 @@
 #include "engine/camera.h"
 
 #include "game/graph.h"
+#include <string.h>
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -94,13 +95,7 @@ void generate_quad(Vertex *v, Vec2 top_left, unsigned size, Faction faction)
 
 void generate_edge_vertices(Vertex *v, Base *bases, Node *nodes, Edge *edges)
 {
-	Base *base_map[BASE_COUNT] = {0};
-
-	for (unsigned i = 0; i < BASE_COUNT; i++)
-	{
-		Base *base = &bases[i];
-		base_map[base->nid] = base;
-	}
+	(void)nodes;
 
 	Color c = {0};
 	c.r = 255;
@@ -114,8 +109,8 @@ void generate_edge_vertices(Vertex *v, Base *bases, Node *nodes, Edge *edges)
 		NID left = edges[e].endpoints[0];
 		NID right = edges[e].endpoints[1];
 
-		Base *left_base = base_map[left];
-		Base *right_base = base_map[right];
+		Base *left_base = &bases[left];
+		Base *right_base = &bases[right];
 
 		v[vertex_idx].pos.x = left_base->pos.x + left_base->size / 2;
 		v[vertex_idx].pos.y = left_base->pos.y - left_base->size / 2;
@@ -145,6 +140,81 @@ void generate_edge_vertices(Vertex *v, Base *bases, Node *nodes, Edge *edges)
 #define HEALTH_BUFF_IDX 4
 
 #define BASE_SIZE 50
+#define EDGE_VERTEX_COUNT (EDGE_COUNT * 2)
+
+static void init_nodes(Node *nodes, size_t count)
+{
+	memset(nodes, 0, sizeof(Node) * count);
+	for (size_t i = 0; i < count; i++)
+	{
+		nodes[i].id = (NID)i;
+	}
+}
+
+static void init_edges(Edge *edges, size_t count)
+{
+	memset(edges, 0, sizeof(Edge) * count);
+	for (size_t i = 0; i < count; i++)
+	{
+		edges[i].id = (EID)i;
+	}
+}
+
+static void build_default_graph(Node *nodes, Edge *edges)
+{
+	graph_connect_undirected(nodes, edges, 0, 0, 1);
+	graph_connect_undirected(nodes, edges, 1, 0, 2);
+	graph_connect_undirected(nodes, edges, 2, 0, 3);
+	graph_connect_undirected(nodes, edges, 3, 1, 2);
+	graph_connect_undirected(nodes, edges, 4, 2, 3);
+	graph_connect_undirected(nodes, edges, 5, 1, 4);
+	graph_connect_undirected(nodes, edges, 6, 2, 4);
+	graph_connect_undirected(nodes, edges, 7, 3, 4);
+}
+
+static void init_bases(Base *bases)
+{
+	// Identity invariant: base index equals node id.
+	base_init(
+		&bases[0],
+		BLUE_FACTION,
+		(Vec2){
+			(WINDOW_WIDTH / 2) - (BASE_SIZE / 2),
+			200 + (BASE_SIZE / 2)},
+		BASE_SIZE);
+
+	base_init(
+		&bases[4],
+		RED_FACTION,
+		(Vec2){
+			(WINDOW_WIDTH / 2) - (BASE_SIZE / 2),
+			(WINDOW_HEIGHT - 200) + (BASE_SIZE / 2)},
+		BASE_SIZE);
+
+	base_init(
+		&bases[1],
+		NEUTRAL_FACTION,
+		(Vec2){
+			(WINDOW_WIDTH / 3) - (BASE_SIZE / 2),
+			(WINDOW_HEIGHT / 2) + (BASE_SIZE / 2)},
+		BASE_SIZE);
+
+	base_init(
+		&bases[2],
+		NEUTRAL_FACTION,
+		(Vec2){
+			(WINDOW_WIDTH / 2) - (BASE_SIZE / 2),
+			(WINDOW_HEIGHT / 2) + (BASE_SIZE / 2)},
+		BASE_SIZE);
+
+	base_init(
+		&bases[3],
+		NEUTRAL_FACTION,
+		(Vec2){
+			(WINDOW_WIDTH / 3 * 2) - (BASE_SIZE / 2),
+			(WINDOW_HEIGHT / 2) + (BASE_SIZE / 2)},
+		BASE_SIZE);
+}
 
 int main()
 {
@@ -157,99 +227,12 @@ int main()
 	*/
 
 	Node nodes[BASE_COUNT];
-	for (unsigned int i = 0; i < BASE_COUNT; i++)
-	{
-		nodes[i].id = i;
-	}
-
 	Edge edges[EDGE_COUNT];
-	for (unsigned int i = 0; i < EDGE_COUNT; i++)
-	{
-		edges[i].id = i;
-	}
-
-	unsigned ec = 0;
-	new_edge(&edges[0], &ec, 0, 1); // 0
-	new_edge(&edges[1], &ec, 0, 2); // 1
-	new_edge(&edges[2], &ec, 0, 3); // 2
-	new_edge(&edges[3], &ec, 1, 2); // 3
-	new_edge(&edges[4], &ec, 2, 3); // 4
-	new_edge(&edges[5], &ec, 1, 4); // 5
-	new_edge(&edges[6], &ec, 2, 4); // 6
-	new_edge(&edges[7], &ec, 3, 4); // 7
-
-	nodes[0].edges[0] = 0;
-	nodes[0].edges[1] = 1;
-	nodes[0].edges[2] = 2;
-	nodes[0].edge_count = 3;
-
-	nodes[1].edges[0] = 0;
-	nodes[1].edges[1] = 5;
-	nodes[1].edges[2] = 3;
-	nodes[1].edge_count = 3;
-
-	nodes[2].edges[0] = 1;
-	nodes[2].edges[1] = 3;
-	nodes[2].edges[2] = 6;
-	nodes[2].edges[3] = 4;
-	nodes[2].edge_count = 4;
-
-	nodes[3].edges[0] = 2;
-	nodes[3].edges[1] = 4;
-	nodes[3].edges[2] = 7;
-	nodes[3].edge_count = 3;
-
-	nodes[4].edges[0] = 6;
-	nodes[4].edges[1] = 5;
-	nodes[4].edges[2] = 7;
-	nodes[4].edge_count = 3;
-
 	Base bases[BASE_COUNT];
-
-	base_init(
-		&bases[0],
-		0,
-		BLUE_FACTION,
-		(Vec2){
-			(WINDOW_WIDTH / 2) - (BASE_SIZE / 2),
-			200 + (BASE_SIZE / 2)},
-		BASE_SIZE);
-
-	base_init(
-		&bases[4],
-		4,
-		RED_FACTION,
-		(Vec2){
-			(WINDOW_WIDTH / 2) - (BASE_SIZE / 2),
-			(WINDOW_HEIGHT - 200) + (BASE_SIZE / 2)},
-		BASE_SIZE);
-
-	base_init(
-		&bases[1],
-		1,
-		NEUTRAL_FACTION,
-		(Vec2){
-			(WINDOW_WIDTH / 3) - (BASE_SIZE / 2),
-			(WINDOW_HEIGHT / 2) + (BASE_SIZE / 2)},
-		BASE_SIZE);
-
-	base_init(
-		&bases[2],
-		2,
-		NEUTRAL_FACTION,
-		(Vec2){
-			(WINDOW_WIDTH / 2) - (BASE_SIZE / 2),
-			(WINDOW_HEIGHT / 2) + (BASE_SIZE / 2)},
-		BASE_SIZE);
-
-	base_init(
-		&bases[3],
-		3,
-		NEUTRAL_FACTION,
-		(Vec2){
-			(WINDOW_WIDTH / 3 * 2) - (BASE_SIZE / 2),
-			(WINDOW_HEIGHT / 2) + (BASE_SIZE / 2)},
-		BASE_SIZE);
+	init_nodes(nodes, BASE_COUNT);
+	init_edges(edges, EDGE_COUNT);
+	build_default_graph(nodes, edges);
+	init_bases(bases);
 
 	Vertex base_vertices[BASE_COUNT * 6] = {0};
 	for (unsigned i = 0; i < BASE_COUNT; i++)
@@ -295,7 +278,7 @@ int main()
 		sizeof(Vec2),
 		LINE_PRIMITIVE);
 
-	Vertex edge_vertices[16];
+	Vertex edge_vertices[EDGE_VERTEX_COUNT];
 	generate_edge_vertices(edge_vertices, bases, nodes, edges);
 	renderer_shader_new(EDGE_PIPELINE_IDX, "./edge.metal", VERTEX_SHADER, 1);
 	renderer_shader_new(EDGE_PIPELINE_IDX, "./edge.metal", FRAGMENT_SHADER, 0);

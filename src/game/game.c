@@ -7,6 +7,7 @@
 #include "engine/renderer.h"
 #include <stdlib.h>
 #include <stdint.h>
+#include <assert.h>
 
 #define PROJECTION_UNIFORM_IDX 0
 #define LINE_UNIFORM_IDX 1
@@ -38,6 +39,15 @@ Game game_new(unsigned window_width, unsigned window_height, Base *bases, Node *
 	game.is_dragging = false;
 	game.line = (Vec4){0};
 	game.fleets_active = 0;
+
+	for (unsigned i = 0; i < BASE_COUNT; i++)
+	{
+		assert(game.nodes[i].id < BASE_COUNT);
+		for (unsigned j = 0; j < game.nodes[i].link_count; j++)
+		{
+			assert(game.nodes[i].links[j].to < BASE_COUNT);
+		}
+	}
 
 	return game;
 }

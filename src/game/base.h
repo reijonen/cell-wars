@@ -5,7 +5,6 @@
 
 #include "faction.h"
 #include "../engine/types/vec2.h"
-#include "graph.h"
 
 typedef struct Base
 {
@@ -14,10 +13,9 @@ typedef struct Base
 	Vec2 pos;
 	unsigned size;
 	// const unsigned char radius;
-	unsigned nid;
 } Base;
 
-void base_init(Base *b, NID id, Faction faction, Vec2 pos, unsigned size);
+void base_init(Base *b, Faction faction, Vec2 pos, unsigned size);
 
 void base_update(Base *base);
 

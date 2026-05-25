@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 
+#include "graph.h"
 #include "base.h"
 #include "engine/types/vec4.h"
 

@@ -1,4 +1,5 @@
 #include <SDL3/SDL.h>
+#include <assert.h>
 
 #include "fleet.h"
 #include "game.h"
@@ -18,59 +19,29 @@ static void fleet_remove(Game *game, unsigned index)
 
 static bool fleet_find_endpoints(Game *game, AttackFleet *fleet, Base **begin, Base **end)
 {
-	*begin = NULL;
-	*end = NULL;
-
-	for (unsigned j = 0; j < BASE_COUNT; j++)
+	NID first = game->edges[fleet->edge].endpoints[0];
+	NID second = game->edges[fleet->edge].endpoints[1];
+	if (first >= BASE_COUNT || second >= BASE_COUNT)
 	{
-		if (game->bases[j].nid == game->edges[fleet->edge].endpoints[0])
-		{
-			if (fleet->dir == RIGHT)
-			{
-				*end = &(game->bases[j]);
-			}
-			else
-			{
-				*begin = &(game->bases[j]);
-			}
-		}
+		*begin = NULL;
+		*end = NULL;
+		return false;
+	}
+	Base *first_base = &game->bases[first];
+	Base *second_base = &game->bases[second];
 
-		if (game->bases[j].nid == game->edges[fleet->edge].endpoints[1])
-		{
-			if (fleet->dir == LEFT)
-			{
-				*end = &(game->bases[j]);
-			}
-			else
-			{
-				*begin = &(game->bases[j]);
-			}
-		}
+	if (fleet->dir == RIGHT)
+	{
+		*begin = second_base;
+		*end = first_base;
+	}
+	else
+	{
+		*begin = first_base;
+		*end = second_base;
 	}
 
-	return *begin != NULL && *end != NULL;
-}
-
-static EID find_shared_edge(Game *game, Base *first, Base *second)
-{
-	Node *first_node = &(game->nodes[first->nid]);
-	Node *second_node = &(game->nodes[second->nid]);
-
-	for (unsigned i = 0; i < first_node->edge_count; i++)
-	{
-		EID feid = first_node->edges[i];
-
-		for (unsigned j = 0; j < second_node->edge_count; j++)
-		{
-			EID seid = second_node->edges[j];
-
-			if (feid == seid)
-				return feid;
-		}
-	}
-
-	// TODO: fix
-	return 9999;
+	return true;
 }
 
 void fleets_new(Game *game, Base *first, Base *second)
@@ -90,13 +61,19 @@ void fleets_new(Game *game, Base *first, Base *second)
 	float length = SDL_sqrt(dx * dx + dy * dy);
 	Vec2 direction = (Vec2){dx / length, dy / length};
 
-	EID shared_edge = find_shared_edge(game, first, second);
-	if (shared_edge == 9999)
+	size_t first_idx = (size_t)(first - game->bases);
+	size_t second_idx = (size_t)(second - game->bases);
+	assert(first_idx < BASE_COUNT);
+	assert(second_idx < BASE_COUNT);
+
+	Node *first_node = &(game->nodes[first_idx]);
+	EID shared_edge = graph_find_edge_between(first_node, (NID)second_idx);
+	if (shared_edge == INVALID_EID)
 		return;
 
 	AttackFleet af = {0};
 	af.edge = shared_edge;
-	af.dir = game->edges[shared_edge].endpoints[0] == first->nid ? LEFT : RIGHT;
+	af.dir = game->edges[shared_edge].endpoints[0] == first_idx ? LEFT : RIGHT;
 	af.size = sent_amount;
 	af.shape = (Vec4){
 		top_center_x,
