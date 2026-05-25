@@ -17,7 +17,7 @@ typedef struct AttackFleet
 {
 	EID edge;
 	AttackDirection dir;
-	unsigned size;
+	size_t size;
 	Vec4 shape;
 	Faction faction;
 } AttackFleet;

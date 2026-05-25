@@ -25,7 +25,7 @@ bool base_hit_test(Base *base, Vec2 hit)
 	return false;
 }
 
-void base_take_damage(Base *base, Faction from, unsigned amount)
+void base_take_damage(Base *base, Faction from, size_t amount)
 {
 	if (base->health == 0)
 	{

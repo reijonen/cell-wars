@@ -64,6 +64,10 @@ EID find_shared_edge(Game *game, Base *first, Base *second)
 
 void fleets_new(Game *game, Base *first, Base *second)
 {
+	size_t sent_amount = first->health / 2;
+	if (sent_amount == 0)
+		return;
+
 	float top_center_x = first->pos.x + first->size / 2;
 	float top_center_y = first->pos.y - first->size / 2;
 
@@ -79,7 +83,7 @@ void fleets_new(Game *game, Base *first, Base *second)
 	AttackFleet af = {0};
 	af.edge = shared_edge;
 	af.dir = game->edges[shared_edge].endpoints[0] == first->nid ? LEFT : RIGHT;
-	af.size = 1; // TODO
+	af.size = sent_amount;
 	af.shape = (Vec4){
 		top_center_x,
 		top_center_y,
@@ -87,6 +91,8 @@ void fleets_new(Game *game, Base *first, Base *second)
 		direction.y,
 	};
 	af.faction = first->faction;
+
+	first->health -= sent_amount;
 
 	game->fleets[game->fleets_active++] = af;
 }
