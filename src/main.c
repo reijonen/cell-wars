@@ -312,7 +312,7 @@ int main()
 
 	Vertex unit_vertices[3];
 	generate_triangle(unit_vertices, (Vec2){100, 100}, 15);
-	renderer_shader_new(UNIT_PIPELINE_IDX, "./unit.metal", VERTEX_SHADER, 2);
+	renderer_shader_new(UNIT_PIPELINE_IDX, "./unit.metal", VERTEX_SHADER, 3);
 	renderer_shader_new(UNIT_PIPELINE_IDX, "./unit.metal", FRAGMENT_SHADER, 0);
 	renderer_buffer_new(
 		UNIT_BUFF_IDX,

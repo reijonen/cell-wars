@@ -13,6 +13,7 @@
 #define BASE_FACTIONS_UNIFORM_IDX 2
 #define HEALTHS_UNIFORM_IDX 2
 #define HEALTH_FACTIONS_UNIFORM_IDX 3
+#define FLEET_SIZE_UNIFORM_IDX 2
 
 #define SHAPE_PIPELINE_IDX 0
 #define SHAPE_BUFF_IDX 0
@@ -381,7 +382,9 @@ void game_render(void *state)
 	for (unsigned i = 0; i < game->fleets_active; i++)
 	{
 		renderer_update_uniform(LINE_UNIFORM_IDX, &game->fleets[i].shape, sizeof(Vec4));
-		renderer_draw(UNIT_PIPELINE_IDX, UNIT_BUFF_IDX, 3, 1);
+		uint32_t fleet_size = (uint32_t)game->fleets[i].size;
+		renderer_update_uniform(FLEET_SIZE_UNIFORM_IDX, &fleet_size, sizeof(uint32_t));
+		renderer_draw(UNIT_PIPELINE_IDX, UNIT_BUFF_IDX, 3, fleet_size);
 	}
 
 	if (game->is_dragging)
