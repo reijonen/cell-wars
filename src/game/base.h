@@ -6,6 +6,7 @@
 
 #include "faction.h"
 #include "../engine/types/vec2.h"
+#include "render_types.h"
 
 typedef struct Base
 {
@@ -18,6 +19,9 @@ typedef struct Base
 } Base;
 
 void base_init(Base *b, Faction faction, Vec2 pos, unsigned size);
+void bases_init_default(Base *bases, unsigned window_width, unsigned window_height, unsigned base_size);
+void base_build_vertices(Vertex *vertices, const Base *bases, unsigned base_count);
+void base_health_build_vertices(Vertex *vertices, const Base *bases, unsigned base_count);
 
 void base_update(Base *base, double delta_time);
 

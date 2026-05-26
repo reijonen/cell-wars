@@ -198,3 +198,20 @@ void fleet_render(AttackFleet *fleets, unsigned fleets_active)
 		renderer_draw(UNIT_PIPELINE_IDX, UNIT_BUFF_IDX, 3, fleet_size);
 	}
 }
+
+void fleet_build_vertices(Vertex *vertices, Vec2 top_center, unsigned size)
+{
+	Color c = {255, 255, 0, 255};
+
+	vertices[0].pos.x = top_center.x;
+	vertices[0].pos.y = top_center.y;
+	vertices[0].color = c;
+
+	vertices[1].pos.x = top_center.x + size / 2;
+	vertices[1].pos.y = top_center.y - size;
+	vertices[1].color = c;
+
+	vertices[2].pos.x = top_center.x - size / 2;
+	vertices[2].pos.y = top_center.y - size;
+	vertices[2].color = c;
+}

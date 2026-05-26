@@ -30,3 +30,4 @@ typedef struct Game Game;
 void fleets_new(Game *game, Base *first, Base *second);
 bool fleet_update(Game *game, unsigned index);
 void fleet_render(AttackFleet *fleets, unsigned fleets_active);
+void fleet_build_vertices(Vertex *vertices, Vec2 top_center, unsigned size);

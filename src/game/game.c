@@ -118,16 +118,17 @@ static void line_render(Game *game)
 	renderer_draw(LINE_PIPELINE_IDX, LINE_BUFF_IDX, 2, 1);
 }
 
-Game game_new(unsigned window_width, unsigned window_height, Base *bases, Node *nodes, Edge *edges)
+Game game_new(unsigned window_width, unsigned window_height, unsigned base_size)
 {
 	Game game;
 	game.camera = camera_init(window_width, window_height);
-	game.bases = bases;
-	game.nodes = nodes;
-	game.edges = edges;
 	game.is_dragging = false;
 	game.line = (Vec4){0};
 	game.fleets_active = 0;
+	graph_init_nodes(game.nodes, BASE_COUNT);
+	graph_init_edges(game.edges, EDGE_COUNT);
+	graph_build_default(game.nodes, game.edges);
+	bases_init_default(game.bases, window_width, window_height, base_size);
 
 	for (unsigned i = 0; i < BASE_COUNT; i++)
 	{

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <SDL3/SDL.h>
+
 #include "../engine/input.h"
 #include "base.h"
 #include "fleet.h"
@@ -7,21 +9,20 @@
 #include "engine/types/vec4.h"
 
 #define BASE_COUNT 5
-#define EDGE_COUNT 8
 
 typedef struct Game
 {
-	Base *bases;
+	Base bases[BASE_COUNT];
 	AttackFleet fleets[FLEET_MAX_ACTIVE];
 	unsigned char fleets_active;
-	Node *nodes;
-	Edge *edges;
+	Node nodes[BASE_COUNT];
+	Edge edges[EDGE_COUNT];
 	Camera camera;
 	Vec4 line;
 	bool is_dragging;
 } Game;
 
-Game game_new(unsigned window_width, unsigned window_height, Base *bases, Node *nodes, Edge *edges);
+Game game_new(unsigned window_width, unsigned window_height, unsigned base_size);
 void game_update(void *state, SDL_Event *events, unsigned int event_count, double delta_time);
 void game_render(void *state);
 void game_release(Game *game);
