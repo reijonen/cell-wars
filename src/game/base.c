@@ -6,13 +6,23 @@ void base_init(Base *b, Faction faction, Vec2 pos, unsigned size)
 {
 	b->faction = faction;
 	b->health = 10;
+	b->regen_accum_seconds = 0.0;
 	b->pos = pos;
 	b->size = size;
 }
 
-void base_update(Base *base)
+void base_update(Base *base, double delta_time)
 {
-	// base->health += 1;
+	base->regen_accum_seconds += delta_time;
+
+	while (base->regen_accum_seconds >= 1.0)
+	{
+		if (base->faction != NEUTRAL_FACTION)
+		{
+			base->health += 1;
+		}
+		base->regen_accum_seconds -= 1.0;
+	}
 }
 
 bool base_hit_test(Base *base, Vec2 hit)

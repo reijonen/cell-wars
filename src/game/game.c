@@ -28,6 +28,99 @@
 #define HEALTH_BUFF_IDX 4
 
 Base *first_base = NULL;
+static const float WINDOW_HEIGHT = 720.0f;
+
+static Vec2 mouse_event_hit(const SDL_MouseButtonEvent *event)
+{
+	return (Vec2){event->x, WINDOW_HEIGHT - event->y};
+}
+
+static Base *find_base_at_hit(Game *game, Vec2 hit)
+{
+	for (unsigned i = 0; i < BASE_COUNT; i++)
+	{
+		if (base_hit_test(&(game->bases[i]), hit))
+		{
+			return &(game->bases[i]);
+		}
+	}
+
+	return NULL;
+}
+
+static void handle_mouse_button_down(Game *game, const SDL_MouseButtonEvent *event)
+{
+	if (event->button != 1)
+	{
+		return;
+	}
+
+	Vec2 hit = mouse_event_hit(event);
+	Base *hit_base = find_base_at_hit(game, hit);
+	if (hit_base == NULL)
+	{
+		return;
+	}
+
+	game->is_dragging = true;
+	game->line.x = hit.x;
+	game->line.y = hit.y;
+	game->line.z = hit.x;
+	game->line.w = hit.y;
+	first_base = hit_base;
+}
+
+static void handle_mouse_button_up(Game *game, const SDL_MouseButtonEvent *event)
+{
+	if (event->button != 1)
+	{
+		return;
+	}
+
+	Vec2 hit = mouse_event_hit(event);
+	Base *second_base = find_base_at_hit(game, hit);
+	if (second_base != NULL)
+	{
+		if (first_base != NULL && first_base != second_base && first_base->faction != NEUTRAL_FACTION)
+		{
+			fleets_new(game, first_base, second_base);
+		}
+	}
+
+	game->is_dragging = false;
+}
+
+static void handle_mouse_motion(Game *game, const SDL_MouseMotionEvent *event)
+{
+	if (!game->is_dragging)
+	{
+		return;
+	}
+
+	game->line.z = event->x;
+	game->line.w = WINDOW_HEIGHT - event->y;
+}
+
+static void process_input(Game *game, SDL_Event *events, unsigned int event_count)
+{
+	for (unsigned int i = 0; i < event_count; i++)
+	{
+		switch (events[i].type)
+		{
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			handle_mouse_button_down(game, &events[i].button);
+			break;
+		case SDL_EVENT_MOUSE_BUTTON_UP:
+			handle_mouse_button_up(game, &events[i].button);
+			break;
+		case SDL_EVENT_MOUSE_MOTION:
+			handle_mouse_motion(game, &events[i].motion);
+			break;
+		default:
+			break;
+		}
+	}
+}
 
 Game game_new(unsigned window_width, unsigned window_height, Base *bases, Node *nodes, Edge *edges)
 {
@@ -55,90 +148,20 @@ Game game_new(unsigned window_width, unsigned window_height, Base *bases, Node *
 void game_update(void *state, SDL_Event *events, unsigned int event_count, double delta_time)
 {
 	Game *game = (Game *)state;
-	static double regen_accum_seconds = 0.0;
-	regen_accum_seconds += delta_time;
-	// printf("Line x: %f, y: %f, z: %f, w: %f\n", game->line.x, game->line.y, game->line.z, game->line.w);
-
-	for (unsigned int i = 0; i < event_count; i++)
-	{
-		switch (events[i].type)
-		{
-		case SDL_EVENT_MOUSE_BUTTON_DOWN:
-		{
-			if (events[i].button.button == 1)
-			{
-				// TODO: WINDOW_HEIGHT
-				Vec2 hit = {events[i].button.x, 720 - events[i].button.y};
-				for (unsigned i = 0; i < BASE_COUNT; i++)
-				{
-					if (base_hit_test(&(game->bases[i]), hit))
-					{
-						printf("HIT xy: %f, %f\n", hit.x, hit.y);
-						game->is_dragging = true;
-						game->line.x = hit.x;
-						game->line.y = hit.y;
-						game->line.z = hit.x;
-						game->line.w = hit.y;
-						first_base = &(game->bases[i]);
-					}
-				}
-			}
-
-			continue;
-		}
-
-		case SDL_EVENT_MOUSE_BUTTON_UP:
-		{
-			if (events[i].button.button == 1)
-			{
-				// TODO: WINDOW_HEIGHT
-				Vec2 hit = {events[i].button.x, 720 - events[i].button.y};
-				for (unsigned i = 0; i < BASE_COUNT; i++)
-				{
-					if (base_hit_test(&(game->bases[i]), hit))
-					{
-						printf("HIT xy: %f, %f\n", hit.x, hit.y);
-						Base *second_base = &(game->bases[i]);
-						if (first_base != NULL && first_base != second_base && first_base->faction != NEUTRAL_FACTION)
-						{
-							fleets_new(game, first_base, second_base);
-						}
-					}
-				}
-				game->is_dragging = false;
-			}
-
-			continue;
-		}
-
-		case SDL_EVENT_MOUSE_MOTION:
-		{
-			if (game->is_dragging)
-			{
-				game->line.z = events[i].button.x;
-				game->line.w = 720 - events[i].button.y;
-			}
-		}
-		}
-	}
+	process_input(game, events, event_count);
 
 	for (unsigned i = 0; i < BASE_COUNT; i++)
 	{
-		base_update(&game->bases[i]);
+		base_update(&game->bases[i], delta_time);
 	}
-	fleets_update(game);
 
-	// TODO: move to base_update
-	while (regen_accum_seconds >= 1.0)
+	unsigned i = 0;
+	while (i < game->fleets_active)
 	{
-		for (unsigned i = 0; i < BASE_COUNT; i++)
+		if (!fleet_update(game, i))
 		{
-			if (game->bases[i].faction != NEUTRAL_FACTION)
-			{
-				game->bases[i].health += 1;
-			}
+			i++;
 		}
-		regen_accum_seconds -= 1.0;
 	}
 }
 

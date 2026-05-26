@@ -10,6 +10,7 @@ typedef struct Base
 {
 	Faction faction;
 	size_t health;
+	double regen_accum_seconds;
 	Vec2 pos;
 	unsigned size;
 	// const unsigned char radius;
@@ -17,7 +18,7 @@ typedef struct Base
 
 void base_init(Base *b, Faction faction, Vec2 pos, unsigned size);
 
-void base_update(Base *base);
+void base_update(Base *base, double delta_time);
 
 bool base_hit_test(Base *base, Vec2 hit);
 

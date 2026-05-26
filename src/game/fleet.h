@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "graph.h"
 #include "base.h"
@@ -27,4 +28,4 @@ typedef struct AttackFleet
 typedef struct Game Game;
 
 void fleets_new(Game *game, Base *first, Base *second);
-void fleets_update(Game *game);
+bool fleet_update(Game *game, unsigned index);

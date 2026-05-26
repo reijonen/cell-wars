@@ -88,115 +88,99 @@ void fleets_new(Game *game, Base *first, Base *second)
 	game->fleets[game->fleets_active++] = af;
 }
 
-void fleets_update(Game *game)
+bool fleet_update(Game *game, unsigned index)
 {
-	unsigned i = 0;
-	while (i < game->fleets_active)
+	if (index >= game->fleets_active)
+		return false;
+
+	AttackFleet *fleet = &(game->fleets[index]);
+
+	fleet->shape.x += fleet->shape.z;
+	fleet->shape.y += fleet->shape.w;
+
+	Base *begin = NULL;
+	Base *end = NULL;
+	if (!fleet_find_endpoints(game, fleet, &begin, &end))
 	{
-		AttackFleet *fleet = &(game->fleets[i]);
-
-		fleet->shape.x += fleet->shape.z;
-		fleet->shape.y += fleet->shape.w;
-
-		Base *begin = NULL;
-		Base *end = NULL;
-		if (!fleet_find_endpoints(game, fleet, &begin, &end))
-		{
-			fleet_remove(game, i);
-			continue;
-		}
-
-		float dx = end->pos.x - begin->pos.x;
-		float dy = end->pos.y - begin->pos.y;
-
-		bool end_reached = false;
-		if (dx > 0)
-		{
-			if (fleet->shape.x > (end->pos.x + end->size / 2))
-			{
-				end_reached = true;
-			}
-		}
-		else if (dx < 0)
-		{
-			if (fleet->shape.x < (end->pos.x + end->size / 2))
-			{
-				end_reached = true;
-			}
-		}
-
-		if (dy > 0)
-		{
-			if (fleet->shape.y > (end->pos.y - end->size / 2))
-			{
-				end_reached = true;
-			}
-		}
-		else if (dy < 0)
-		{
-			if (fleet->shape.y < (end->pos.y - end->size / 2))
-			{
-				end_reached = true;
-			}
-		}
-
-		if (end_reached)
-		{
-			base_take_damage(end, fleet->faction, fleet->size);
-			fleet_remove(game, i);
-			continue;
-		}
-
-		i++;
+		fleet_remove(game, index);
+		return true;
 	}
 
-	i = 0;
-	while (i < game->fleets_active)
+	float dx = end->pos.x - begin->pos.x;
+	float dy = end->pos.y - begin->pos.y;
+
+	bool end_reached = false;
+	if (dx > 0)
 	{
-		AttackFleet *first = &(game->fleets[i]);
-		bool first_removed = false;
-
-		unsigned j = i + 1;
-		while (j < game->fleets_active)
+		if (fleet->shape.x > (end->pos.x + end->size / 2))
 		{
-			AttackFleet *second = &(game->fleets[j]);
+			end_reached = true;
+		}
+	}
+	else if (dx < 0)
+	{
+		if (fleet->shape.x < (end->pos.x + end->size / 2))
+		{
+			end_reached = true;
+		}
+	}
 
-			if (first->edge == second->edge && first->dir != second->dir && first->faction != second->faction)
+	if (dy > 0)
+	{
+		if (fleet->shape.y > (end->pos.y - end->size / 2))
+		{
+			end_reached = true;
+		}
+	}
+	else if (dy < 0)
+	{
+		if (fleet->shape.y < (end->pos.y - end->size / 2))
+		{
+			end_reached = true;
+		}
+	}
+
+	if (end_reached)
+	{
+		base_take_damage(end, fleet->faction, fleet->size);
+		fleet_remove(game, index);
+		return true;
+	}
+
+	fleet = &(game->fleets[index]);
+	unsigned j = index + 1;
+	while (j < game->fleets_active)
+	{
+		AttackFleet *second = &(game->fleets[j]);
+		if (fleet->edge == second->edge && fleet->dir != second->dir && fleet->faction != second->faction)
+		{
+			float cdx = fleet->shape.x - second->shape.x;
+			float cdy = fleet->shape.y - second->shape.y;
+			float distance_sq = (cdx * cdx) + (cdy * cdy);
+			if (distance_sq <= (FLEET_CLASH_DISTANCE * FLEET_CLASH_DISTANCE))
 			{
-				float dx = first->shape.x - second->shape.x;
-				float dy = first->shape.y - second->shape.y;
-				float distance_sq = (dx * dx) + (dy * dy);
-				if (distance_sq <= (FLEET_CLASH_DISTANCE * FLEET_CLASH_DISTANCE))
+				if (fleet->size == second->size)
 				{
-					if (first->size == second->size)
-					{
-						fleet_remove(game, j);
-						fleet_remove(game, i);
-						first_removed = true;
-						break;
-					}
-					else if (first->size > second->size)
-					{
-						first->size -= second->size;
-						fleet_remove(game, j);
-						continue;
-					}
-					else
-					{
-						second->size -= first->size;
-						fleet_remove(game, i);
-						first_removed = true;
-						break;
-					}
+					fleet_remove(game, j);
+					fleet_remove(game, index);
+					return true;
+				}
+				else if (fleet->size > second->size)
+				{
+					fleet->size -= second->size;
+					fleet_remove(game, j);
+					continue;
+				}
+				else
+				{
+					second->size -= fleet->size;
+					fleet_remove(game, index);
+					return true;
 				}
 			}
-
-			j++;
 		}
-
-		if (!first_removed)
-		{
-			i++;
-		}
+		j++;
 	}
+
+	return false;
 }
