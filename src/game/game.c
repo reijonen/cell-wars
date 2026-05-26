@@ -2,30 +2,15 @@
 
 #include "game.h"
 #include "base.h"
+#include "graph.h"
+#include "fleet.h"
+#include "game_render_ids.h"
 
 // TODO: tmp
 #include "engine/renderer.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
-
-#define PROJECTION_UNIFORM_IDX 0
-#define LINE_UNIFORM_IDX 1
-#define BASE_FACTIONS_UNIFORM_IDX 2
-#define HEALTHS_UNIFORM_IDX 2
-#define HEALTH_FACTIONS_UNIFORM_IDX 3
-#define FLEET_SIZE_UNIFORM_IDX 2
-
-#define SHAPE_PIPELINE_IDX 0
-#define SHAPE_BUFF_IDX 0
-#define LINE_PIPELINE_IDX 1
-#define LINE_BUFF_IDX 1
-#define EDGE_PIPELINE_IDX 2
-#define EDGE_BUFF_IDX 2
-#define UNIT_PIPELINE_IDX 3
-#define UNIT_BUFF_IDX 3
-#define HEALTH_PIPELINE_IDX 4
-#define HEALTH_BUFF_IDX 4
 
 Base *first_base = NULL;
 static const float WINDOW_HEIGHT = 720.0f;
@@ -101,7 +86,7 @@ static void handle_mouse_motion(Game *game, const SDL_MouseMotionEvent *event)
 	game->line.w = WINDOW_HEIGHT - event->y;
 }
 
-static void process_input(Game *game, SDL_Event *events, unsigned int event_count)
+static void game_process_input(Game *game, SDL_Event *events, unsigned int event_count)
 {
 	for (unsigned int i = 0; i < event_count; i++)
 	{
@@ -120,6 +105,17 @@ static void process_input(Game *game, SDL_Event *events, unsigned int event_coun
 			break;
 		}
 	}
+}
+
+static void line_render(Game *game)
+{
+	if (!game->is_dragging)
+	{
+		return;
+	}
+
+	renderer_update_uniform(LINE_UNIFORM_IDX, &game->line, sizeof(Vec4));
+	renderer_draw(LINE_PIPELINE_IDX, LINE_BUFF_IDX, 2, 1);
 }
 
 Game game_new(unsigned window_width, unsigned window_height, Base *bases, Node *nodes, Edge *edges)
@@ -148,7 +144,7 @@ Game game_new(unsigned window_width, unsigned window_height, Base *bases, Node *
 void game_update(void *state, SDL_Event *events, unsigned int event_count, double delta_time)
 {
 	Game *game = (Game *)state;
-	process_input(game, events, event_count);
+	game_process_input(game, events, event_count);
 
 	for (unsigned i = 0; i < BASE_COUNT; i++)
 	{
@@ -182,27 +178,11 @@ void game_render(void *state)
 	}
 
 	renderer_update_uniform(PROJECTION_UNIFORM_IDX, &game->camera.projection, sizeof(mat4x4));
-	renderer_draw(EDGE_PIPELINE_IDX, EDGE_BUFF_IDX, 16, 1);
-	renderer_update_uniform(BASE_FACTIONS_UNIFORM_IDX, factions, sizeof(factions));
-	renderer_draw(SHAPE_PIPELINE_IDX, SHAPE_BUFF_IDX, 30, 1);
-
-	renderer_update_uniform(HEALTHS_UNIFORM_IDX, healths, sizeof(healths));
-	renderer_update_uniform(HEALTH_FACTIONS_UNIFORM_IDX, factions, sizeof(factions));
-	renderer_draw(HEALTH_PIPELINE_IDX, HEALTH_BUFF_IDX, BASE_COUNT, max_health);
-
-	for (unsigned i = 0; i < game->fleets_active; i++)
-	{
-		renderer_update_uniform(LINE_UNIFORM_IDX, &game->fleets[i].shape, sizeof(Vec4));
-		uint32_t fleet_size = (uint32_t)game->fleets[i].size;
-		renderer_update_uniform(FLEET_SIZE_UNIFORM_IDX, &fleet_size, sizeof(uint32_t));
-		renderer_draw(UNIT_PIPELINE_IDX, UNIT_BUFF_IDX, 3, fleet_size);
-	}
-
-	if (game->is_dragging)
-	{
-		renderer_update_uniform(LINE_UNIFORM_IDX, &game->line, sizeof(Vec4));
-		renderer_draw(LINE_PIPELINE_IDX, LINE_BUFF_IDX, 2, 1);
-	}
+	edges_render();
+	base_render(factions, BASE_COUNT);
+	base_health_render(healths, factions, BASE_COUNT, max_health);
+	fleet_render(game->fleets, game->fleets_active);
+	line_render(game);
 }
 
 void game_release(Game *game)

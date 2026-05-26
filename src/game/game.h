@@ -7,6 +7,7 @@
 #include "engine/types/vec4.h"
 
 #define BASE_COUNT 5
+#define EDGE_COUNT 8
 
 typedef struct Game
 {

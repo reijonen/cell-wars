@@ -1,4 +1,9 @@
+#include <SDL3/SDL.h>
+
 #include "graph.h"
+#include "game.h"
+#include "game_render_ids.h"
+#include "engine/renderer.h"
 
 void new_edge(Edge *edge, EID from, EID to)
 {
@@ -31,4 +36,9 @@ EID graph_find_edge_between(const Node *node, NID to)
 	}
 
 	return INVALID_EID;
+}
+
+void edges_render(void)
+{
+	renderer_draw(EDGE_PIPELINE_IDX, EDGE_BUFF_IDX, EDGE_COUNT * 2, 1);
 }

@@ -1,5 +1,6 @@
 #include "engine/engine.h"
 #include "game/game.h"
+#include "game/game_render_ids.h"
 #include "engine/camera.h"
 
 #include "game/graph.h"
@@ -91,8 +92,6 @@ void generate_quad(Vertex *v, Vec2 top_left, unsigned size, Faction faction)
 	v[5].color = color;
 }
 
-#define EDGE_COUNT 8
-
 void generate_edge_vertices(Vertex *v, Base *bases, Node *nodes, Edge *edges)
 {
 	(void)nodes;
@@ -123,21 +122,6 @@ void generate_edge_vertices(Vertex *v, Base *bases, Node *nodes, Edge *edges)
 		vertex_idx++;
 	}
 }
-
-#define SHAPE_PIPELINE_IDX 0
-#define SHAPE_BUFF_IDX 0
-
-#define LINE_PIPELINE_IDX 1
-#define LINE_BUFF_IDX 1
-
-#define EDGE_PIPELINE_IDX 2
-#define EDGE_BUFF_IDX 2
-
-#define UNIT_PIPELINE_IDX 3
-#define UNIT_BUFF_IDX 3
-
-#define HEALTH_PIPELINE_IDX 4
-#define HEALTH_BUFF_IDX 4
 
 #define BASE_SIZE 50
 #define EDGE_VERTEX_COUNT (EDGE_COUNT * 2)

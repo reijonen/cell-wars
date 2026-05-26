@@ -1,8 +1,11 @@
 #include <SDL3/SDL.h>
 #include <assert.h>
+#include <stdint.h>
 
 #include "fleet.h"
 #include "game.h"
+#include "game_render_ids.h"
+#include "engine/renderer.h"
 
 static void fleet_remove(Game *game, unsigned index)
 {
@@ -183,4 +186,15 @@ bool fleet_update(Game *game, unsigned index)
 	}
 
 	return false;
+}
+
+void fleet_render(AttackFleet *fleets, unsigned fleets_active)
+{
+	for (unsigned i = 0; i < fleets_active; i++)
+	{
+		renderer_update_uniform(LINE_UNIFORM_IDX, &fleets[i].shape, sizeof(Vec4));
+		uint32_t fleet_size = (uint32_t)fleets[i].size;
+		renderer_update_uniform(FLEET_SIZE_UNIFORM_IDX, &fleet_size, sizeof(uint32_t));
+		renderer_draw(UNIT_PIPELINE_IDX, UNIT_BUFF_IDX, 3, fleet_size);
+	}
 }

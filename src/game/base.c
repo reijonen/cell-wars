@@ -1,4 +1,6 @@
 #include "base.h"
+#include "game_render_ids.h"
+#include "engine/renderer.h"
 
 #include <stdio.h>
 
@@ -63,4 +65,17 @@ void base_take_damage(Base *base, Faction from, size_t amount)
 	}
 
 	base->health -= amount;
+}
+
+void base_render(uint32_t *factions, unsigned base_count)
+{
+	renderer_update_uniform(BASE_FACTIONS_UNIFORM_IDX, factions, sizeof(uint32_t) * base_count);
+	renderer_draw(SHAPE_PIPELINE_IDX, SHAPE_BUFF_IDX, base_count * 6, 1);
+}
+
+void base_health_render(uint32_t *healths, uint32_t *factions, unsigned base_count, unsigned max_health)
+{
+	renderer_update_uniform(HEALTHS_UNIFORM_IDX, healths, sizeof(uint32_t) * base_count);
+	renderer_update_uniform(HEALTH_FACTIONS_UNIFORM_IDX, factions, sizeof(uint32_t) * base_count);
+	renderer_draw(HEALTH_PIPELINE_IDX, HEALTH_BUFF_IDX, base_count, max_health);
 }

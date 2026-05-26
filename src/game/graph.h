@@ -29,3 +29,4 @@ void new_edge(Edge *edge, EID from, EID to);
 void add_node_link(Node *node, NID to, EID edge);
 void graph_connect_undirected(Node *nodes, Edge *edges, EID edge_id, NID from, NID to);
 EID graph_find_edge_between(const Node *node, NID to);
+void edges_render(void);
