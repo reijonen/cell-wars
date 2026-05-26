@@ -8,14 +8,6 @@
 
 int main()
 {
-	/*
-				| 4 |
-		(5)/     |(6)    \(7)
-	 | 1 | -(3) | 2 | (4)- | 3 |
-		(0)\     |(1)    /(2)
-				| 0 |
-	*/
-
 	Game game = game_new(WINDOW_WIDTH, WINDOW_HEIGHT, BASE_SIZE);
 	GameRenderer game_renderer = {0};
 

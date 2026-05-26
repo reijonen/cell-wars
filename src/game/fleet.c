@@ -47,6 +47,112 @@ static bool fleet_find_endpoints(Game *game, AttackFleet *fleet, Base **begin, B
 	return true;
 }
 
+static void fleet_step_motion(AttackFleet *fleet)
+{
+	fleet->shape.x += fleet->shape.z;
+	fleet->shape.y += fleet->shape.w;
+}
+
+static bool fleet_reached_end(const AttackFleet *fleet, const Base *begin, const Base *end)
+{
+	float dx = end->pos.x - begin->pos.x;
+	float dy = end->pos.y - begin->pos.y;
+	bool end_reached = false;
+
+	if (dx > 0)
+	{
+		if (fleet->shape.x > (end->pos.x + end->size / 2))
+		{
+			end_reached = true;
+		}
+	}
+	else if (dx < 0)
+	{
+		if (fleet->shape.x < (end->pos.x + end->size / 2))
+		{
+			end_reached = true;
+		}
+	}
+
+	if (dy > 0)
+	{
+		if (fleet->shape.y > (end->pos.y - end->size / 2))
+		{
+			end_reached = true;
+		}
+	}
+	else if (dy < 0)
+	{
+		if (fleet->shape.y < (end->pos.y - end->size / 2))
+		{
+			end_reached = true;
+		}
+	}
+
+	return end_reached;
+}
+
+static bool fleet_resolve_arrival(Game *game, unsigned index)
+{
+	AttackFleet *fleet = &(game->fleets[index]);
+	Base *begin = NULL;
+	Base *end = NULL;
+	if (!fleet_find_endpoints(game, fleet, &begin, &end))
+	{
+		fleet_remove(game, index);
+		return true;
+	}
+
+	if (!fleet_reached_end(fleet, begin, end))
+	{
+		return false;
+	}
+
+	base_take_damage(end, fleet->faction, fleet->size);
+	fleet_remove(game, index);
+	return true;
+}
+
+static bool fleet_resolve_clashes(Game *game, unsigned index)
+{
+	AttackFleet *fleet = &(game->fleets[index]);
+	unsigned j = index + 1;
+	while (j < game->fleets_active)
+	{
+		AttackFleet *second = &(game->fleets[j]);
+		if (fleet->edge == second->edge && fleet->dir != second->dir && fleet->faction != second->faction)
+		{
+			float cdx = fleet->shape.x - second->shape.x;
+			float cdy = fleet->shape.y - second->shape.y;
+			float distance_sq = (cdx * cdx) + (cdy * cdy);
+			if (distance_sq <= (FLEET_CLASH_DISTANCE * FLEET_CLASH_DISTANCE))
+			{
+				if (fleet->size == second->size)
+				{
+					fleet_remove(game, j);
+					fleet_remove(game, index);
+					return true;
+				}
+				else if (fleet->size > second->size)
+				{
+					fleet->size -= second->size;
+					fleet_remove(game, j);
+					continue;
+				}
+				else
+				{
+					second->size -= fleet->size;
+					fleet_remove(game, index);
+					return true;
+				}
+			}
+		}
+		j++;
+	}
+
+	return false;
+}
+
 void fleets_new(Game *game, Base *first, Base *second)
 {
 	if (game->fleets_active >= FLEET_MAX_ACTIVE)
@@ -96,94 +202,11 @@ bool fleet_update(Game *game, unsigned index)
 	if (index >= game->fleets_active)
 		return false;
 
-	AttackFleet *fleet = &(game->fleets[index]);
-
-	fleet->shape.x += fleet->shape.z;
-	fleet->shape.y += fleet->shape.w;
-
-	Base *begin = NULL;
-	Base *end = NULL;
-	if (!fleet_find_endpoints(game, fleet, &begin, &end))
-	{
-		fleet_remove(game, index);
+	fleet_step_motion(&(game->fleets[index]));
+	if (fleet_resolve_arrival(game, index))
 		return true;
-	}
-
-	float dx = end->pos.x - begin->pos.x;
-	float dy = end->pos.y - begin->pos.y;
-
-	bool end_reached = false;
-	if (dx > 0)
-	{
-		if (fleet->shape.x > (end->pos.x + end->size / 2))
-		{
-			end_reached = true;
-		}
-	}
-	else if (dx < 0)
-	{
-		if (fleet->shape.x < (end->pos.x + end->size / 2))
-		{
-			end_reached = true;
-		}
-	}
-
-	if (dy > 0)
-	{
-		if (fleet->shape.y > (end->pos.y - end->size / 2))
-		{
-			end_reached = true;
-		}
-	}
-	else if (dy < 0)
-	{
-		if (fleet->shape.y < (end->pos.y - end->size / 2))
-		{
-			end_reached = true;
-		}
-	}
-
-	if (end_reached)
-	{
-		base_take_damage(end, fleet->faction, fleet->size);
-		fleet_remove(game, index);
+	if (fleet_resolve_clashes(game, index))
 		return true;
-	}
-
-	fleet = &(game->fleets[index]);
-	unsigned j = index + 1;
-	while (j < game->fleets_active)
-	{
-		AttackFleet *second = &(game->fleets[j]);
-		if (fleet->edge == second->edge && fleet->dir != second->dir && fleet->faction != second->faction)
-		{
-			float cdx = fleet->shape.x - second->shape.x;
-			float cdy = fleet->shape.y - second->shape.y;
-			float distance_sq = (cdx * cdx) + (cdy * cdy);
-			if (distance_sq <= (FLEET_CLASH_DISTANCE * FLEET_CLASH_DISTANCE))
-			{
-				if (fleet->size == second->size)
-				{
-					fleet_remove(game, j);
-					fleet_remove(game, index);
-					return true;
-				}
-				else if (fleet->size > second->size)
-				{
-					fleet->size -= second->size;
-					fleet_remove(game, j);
-					continue;
-				}
-				else
-				{
-					second->size -= fleet->size;
-					fleet_remove(game, index);
-					return true;
-				}
-			}
-		}
-		j++;
-	}
 
 	return false;
 }
